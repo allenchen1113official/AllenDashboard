@@ -79,7 +79,7 @@
 | **Default** | （空白） |
 | **Array** | ❌ 不勾選 |
 
-點選 **「Create」**，等待狀態變成 `Available`
+點選 **「Create row」**，等待狀態變成 `Available`
 
 #### 欄位 2：value
 
@@ -92,7 +92,7 @@
 | **Default** | （空白） |
 | **Array** | ❌ 不勾選 |
 
-點選 **「Create」**，等待狀態變成 `Available`
+點選 **「Create row」**，等待狀態變成 `Available`
 
 ### 3-3 新增 Index
 
@@ -150,6 +150,8 @@
 | **Size** | `500` |
 | **Required** | ✅ 勾選 |
 
+點選 **「Create row」**，等待狀態變成 `Available`
+
 #### 欄位 2：date
 
 | 設定項目 | 值 |
@@ -162,6 +164,8 @@
 
 > 格式為 `YYYY-MM-DD`，例如 `2025-04-25`
 
+點選 **「Create row」**，等待狀態變成 `Available`
+
 #### 欄位 3：time
 
 | 設定項目 | 值 |
@@ -173,6 +177,8 @@
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
 
+點選 **「Create row」**，等待狀態變成 `Available`
+
 #### 欄位 4：note
 
 | 設定項目 | 值 |
@@ -182,6 +188,8 @@
 | **Column ID** | `note` |
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
+
+點選 **「Create row」**，等待狀態變成 `Available`
 
 #### 欄位 5：color
 
@@ -193,6 +201,8 @@
 | **Size** | `20` |
 | **Required** | ❌ 不勾選 |
 | **Default** | `#58a6ff` |
+
+點選 **「Create row」**，等待狀態變成 `Available`
 
 ### 4-3 設定 Permissions
 
@@ -216,6 +226,8 @@
 
 ### 5-2 新增欄位（Columns）
 
+點選 **「Columns」** 標籤，依序新增以下五個欄位：
+
 #### 欄位 1：title
 
 | 設定項目 | 值 |
@@ -225,6 +237,8 @@
 | **Column ID** | `title` |
 | **Size** | `500` |
 | **Required** | ✅ 勾選 |
+
+點選 **「Create row」**，等待狀態變成 `Available`
 
 #### 欄位 2：description
 
@@ -236,6 +250,8 @@
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
 
+點選 **「Create row」**，等待狀態變成 `Available`
+
 #### 欄位 3：year
 
 | 設定項目 | 值 |
@@ -245,6 +261,8 @@
 | **Required** | ✅ 勾選 |
 | **Min** | `1900` |
 | **Max** | `2099` |
+
+點選 **「Create row」**，等待狀態變成 `Available`
 
 #### 欄位 4：month
 
@@ -256,6 +274,8 @@
 | **Min** | `1` |
 | **Max** | `12` |
 
+點選 **「Create row」**，等待狀態變成 `Available`
+
 #### 欄位 5：day
 
 | 設定項目 | 值 |
@@ -265,6 +285,8 @@
 | **Required** | ✅ 勾選 |
 | **Min** | `1` |
 | **Max** | `31` |
+
+點選 **「Create row」**，等待狀態變成 `Available`
 
 ### 5-3 新增 Index
 
