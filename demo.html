@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Allen's Dashboard — 展示模式</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .db-demo {
+      background: rgba(88,166,255,.12);
+      color: #58a6ff;
+      border-color: rgba(88,166,255,.3);
+    }
+    .demo-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 18px;
+      background: rgba(88,166,255,.08);
+      border-bottom: 1px solid rgba(88,166,255,.25);
+      font-size: 12px;
+      color: #58a6ff;
+      flex-shrink: 0;
+    }
+    .demo-banner a {
+      color: #79b8ff;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .demo-banner-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #58a6ff;
+      font-size: 14px;
+      opacity: .7;
+    }
+    .demo-banner-close:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-bolt">⚡</span>
+      <h1>Allen's Dashboard</h1>
+    </div>
+    <div class="header-clock">
+      <div class="clock-time" id="clock">--:--:--</div>
+      <div class="clock-date" id="dateInfo">載入中...</div>
+    </div>
+    <div class="header-right">
+      <span class="greeting" id="greeting"></span>
+      <span class="db-badge db-demo" title="展示模式：使用預設資料">
+        <i class="fas fa-flask"></i> <span>展示模式</span>
+      </span>
+    </div>
+  </header>
+
+  <!-- 展示模式提示列 -->
+  <div class="demo-banner" id="demoBanner">
+    <i class="fas fa-circle-info"></i>
+    <span>目前為 <strong>展示模式</strong>，使用預設 Mock 資料，所有操作不會實際儲存。
+      正式使用請設定 <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px">config.js</code>
+      並依 <a href="APPWRITE_SETUP.md" target="_blank">APPWRITE_SETUP.md</a> 建立資料庫。
+    </span>
+    <button class="demo-banner-close" onclick="this.parentElement.style.display='none'">✕</button>
+  </div>
+
+  <!-- ── MAIN GRID ── -->
+  <main class="dashboard">
+
+    <!-- ROW 1 : English ｜ Calendar ｜ Links -->
+    <div class="row row-top">
+
+      <!-- English Learning -->
+      <section class="card card-english">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-graduation-cap"></i> 英文學習</span>
+          <div class="card-actions">
+            <button class="ibtn" id="prevWord" title="上一個"><i class="fas fa-chevron-left"></i></button>
+            <span class="word-idx" id="wordIdx">1 / 10</span>
+            <button class="ibtn" id="nextWord" title="下一個"><i class="fas fa-chevron-right"></i></button>
+            <button class="ibtn" id="flipCard" title="翻轉卡片"><i class="fas fa-rotate"></i></button>
+          </div>
+        </div>
+        <div class="flashcard" id="flashcard">
+          <div class="fc-inner" id="fcInner">
+            <div class="fc-front">
+              <div class="fc-word" id="fcWord">serendipity</div>
+              <div class="fc-phonetic" id="fcPhonetic">/ˌserənˈdɪpɪti/</div>
+              <div class="fc-pos" id="fcPos">noun</div>
+              <div class="fc-hint">點擊翻轉查看定義</div>
+            </div>
+            <div class="fc-back">
+              <div class="fc-def" id="fcDef">The occurrence of finding pleasant things by chance.</div>
+              <div class="fc-ex" id="fcEx">"It was pure serendipity that led me to my dream job."</div>
+            </div>
+          </div>
+        </div>
+        <textarea class="word-notes" id="wordNotes" placeholder="📝 學習筆記（展示模式不儲存）…">這個字的語感很美，有種「無意間遇上美好」的感覺。
+例：旅途中巧遇的風景往往最令人難忘。</textarea>
+      </section>
+
+      <!-- Calendar -->
+      <section class="card card-calendar">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-calendar-alt"></i> 行事曆</span>
+          <div class="card-actions">
+            <button class="ibtn" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+            <span class="month-lbl" id="monthLbl"></span>
+            <button class="ibtn" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+        <div class="cal-weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+        <div class="upcoming-hd">近期事件</div>
+        <div class="upcoming-list" id="upcomingList"></div>
+      </section>
+
+      <!-- Quick Links -->
+      <section class="card card-links">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-bookmark"></i> 常用連結</span>
+          <div class="card-actions">
+            <input type="text" id="linkFilter" placeholder="搜尋…" class="mini-search" />
+          </div>
+        </div>
+        <div class="links-body" id="linksBody"></div>
+      </section>
+
+    </div><!-- /row-top -->
+
+    <!-- ROW 2 : News ｜ Podcast -->
+    <div class="row row-bottom">
+
+      <!-- News Feed -->
+      <section class="card card-news">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-newspaper"></i> 新聞訂閱</span>
+          <div class="card-actions">
+            <div class="kw-bar" id="kwBar">
+              <span class="kw-tag">科技</span>
+              <span class="kw-tag">AI</span>
+              <span class="kw-tag">台灣</span>
+            </div>
+          </div>
+        </div>
+        <div class="news-body" id="newsBody"></div>
+      </section>
+
+      <!-- Podcast -->
+      <section class="card card-podcast">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-headphones"></i> Podcast 摘要</span>
+        </div>
+        <div class="podcast-body" id="podcastBody"></div>
+      </section>
+
+    </div><!-- /row-bottom -->
+
+    <!-- ROW 3 : 歷史上的今天 ｜ 艾倫歷史上的今天 -->
+    <div class="row row-history">
+
+      <!-- World History -->
+      <section class="card card-world-history">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-landmark"></i> 歷史上的今天</span>
+          <div class="card-actions">
+            <span class="date-badge" id="historyDateBadge"></span>
+          </div>
+        </div>
+        <div class="history-body" id="worldHistoryBody"></div>
+      </section>
+
+      <!-- Personal History -->
+      <section class="card card-personal-history">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-book-open"></i> 艾倫歷史上的今天</span>
+          <div class="card-actions">
+            <span class="date-badge" id="phDateBadge"></span>
+          </div>
+        </div>
+        <div class="personal-history-body" id="personalHistoryBody"></div>
+      </section>
+
+    </div><!-- /row-history -->
+
+  </main>
+</div><!-- /#app -->
+
+<script>
+'use strict';
+
+// ─── MOCK DATA ───────────────────────────────────────────────────────────────
+
+const VOCAB = [
+  { word:'serendipity',   phonetic:'/ˌserənˈdɪpɪti/',  pos:'noun',      def:'The occurrence of finding pleasant things by chance.',                       ex:'It was pure serendipity that led me to my dream job.' },
+  { word:'ephemeral',     phonetic:'/ɪˈfemərəl/',       pos:'adjective', def:'Lasting for a very short time; transitory.',                                 ex:'The ephemeral beauty of cherry blossoms makes them precious.' },
+  { word:'resilience',    phonetic:'/rɪˈzɪliəns/',      pos:'noun',      def:'The capacity to recover quickly from difficulties.',                         ex:'Her resilience in the face of adversity was truly inspiring.' },
+  { word:'eloquent',      phonetic:'/ˈeləkwənt/',       pos:'adjective', def:'Fluent or persuasive in speaking or writing.',                               ex:'He gave an eloquent speech that moved the entire audience.' },
+  { word:'tenacious',     phonetic:'/tɪˈneɪʃəs/',       pos:'adjective', def:'Tending to keep a firm hold; persistent.',                                   ex:'She was tenacious in pursuing her goals despite obstacles.' },
+  { word:'meticulous',    phonetic:'/mɪˈtɪkjʊləs/',    pos:'adjective', def:'Showing great attention to detail; very careful.',                           ex:'His meticulous notes made revision much easier.' },
+  { word:'ubiquitous',    phonetic:'/juːˈbɪkwɪtəs/',   pos:'adjective', def:'Present, appearing, or found everywhere.',                                   ex:'Smartphones have become ubiquitous in modern life.' },
+  { word:'paradigm',      phonetic:'/ˈpærədaɪm/',       pos:'noun',      def:'A typical example or pattern; a model.',                                     ex:'The internet created a new paradigm for communication.' },
+  { word:'perseverance',  phonetic:'/ˌpɜːsɪˈvɪərəns/', pos:'noun',      def:'Continued effort despite difficulty or delay.',                              ex:'Perseverance is the key to mastering any skill.' },
+  { word:'sagacious',     phonetic:'/səˈɡeɪʃəs/',       pos:'adjective', def:'Having or showing keen mental discernment and good judgement.',              ex:'A sagacious investor avoids emotional decisions.' },
+];
+
+const MOCK_EVENTS = [
+  { id:'e1', title:'團隊週會',         date:'2026-04-25', time:'10:00', note:'準備進度報告',   color:'#58a6ff' },
+  { id:'e2', title:'專案截止日',       date:'2026-04-28', time:'18:00', note:'記得備份程式碼', color:'#f85149' },
+  { id:'e3', title:'勞動節假期',       date:'2026-05-01', time:'',      note:'',               color:'#3fb950' },
+  { id:'e4', title:'季度成果發表',     date:'2026-05-08', time:'14:00', note:'準備簡報',       color:'#bc8cff' },
+  { id:'e5', title:'英文讀書會',       date:'2026-05-15', time:'19:30', note:'本週主題：TED',  color:'#d29922' },
+  { id:'e6', title:'健康檢查',         date:'2026-05-22', time:'09:00', note:'記得空腹',       color:'#f0883e' },
+];
+
+const MOCK_LINKS = [
+  { name:'Google',         url:'https://www.google.com',    cat:'常用',  icon:'fab fa-google' },
+  { name:'Gmail',          url:'https://mail.google.com',   cat:'常用',  icon:'fas fa-envelope' },
+  { name:'GitHub',         url:'https://github.com',        cat:'開發',  icon:'fab fa-github' },
+  { name:'Stack Overflow', url:'https://stackoverflow.com', cat:'開發',  icon:'fab fa-stack-overflow' },
+  { name:'YouTube',        url:'https://www.youtube.com',   cat:'娛樂',  icon:'fab fa-youtube' },
+  { name:'ChatGPT',        url:'https://chat.openai.com',   cat:'AI',    icon:'fas fa-robot' },
+  { name:'Claude',         url:'https://claude.ai',         cat:'AI',    icon:'fas fa-brain' },
+  { name:'Notion',         url:'https://notion.so',         cat:'生產力', icon:'fas fa-sticky-note' },
+  { name:'LinkedIn',       url:'https://linkedin.com',      cat:'工作',  icon:'fab fa-linkedin' },
+  { name:'Twitter/X',      url:'https://x.com',             cat:'社群',  icon:'fab fa-x-twitter' },
+];
+
+const MOCK_NEWS = [
+  {
+    source:'The Verge', date:'2小時前',
+    title:'Apple announces M4 Ultra chip with groundbreaking neural engine performance',
+    desc:'The new chip delivers 3x faster machine learning tasks compared to its predecessor, enabling real-time translation and on-device AI features.',
+    url:'#'
+  },
+  {
+    source:'Hacker News', date:'4小時前',
+    title:'Taiwan\'s TSMC begins volume production of 1.4nm process node',
+    desc:'The world\'s leading foundry enters a new era of miniaturization, with first commercial shipments expected to major clients by Q3.',
+    url:'#'
+  },
+  {
+    source:'BBC World', date:'6小時前',
+    title:'Global AI governance summit reaches landmark agreement on safety standards',
+    desc:'Representatives from 40 nations signed a framework requiring mandatory audits of large language models before public deployment.',
+    url:'#'
+  },
+  {
+    source:'TechCrunch', date:'8小時前',
+    title:'OpenAI releases GPT-5 with multimodal reasoning capabilities',
+    desc:'The latest model demonstrates advanced reasoning across text, images, and code, setting new benchmarks on multiple evaluation suites.',
+    url:'#'
+  },
+  {
+    source:'Reuters', date:'10小時前',
+    title:'Taiwan Stock Exchange hits record high amid semiconductor boom',
+    desc:'The TAIEX closed above 25,000 for the first time, driven by surging demand for AI infrastructure and memory components.',
+    url:'#'
+  },
+];
+
+const MOCK_PODCASTS = [
+  {
+    name: 'TED Talks Daily',
+    episodes: [
+      { title:'The surprising science of happiness', date:'2026-04-25', duration:'12:34', desc:'Psychologist Dan Gilbert explains how our psychological immune system works and why we\'re not always good at predicting what will make us happy.' },
+      { title:'Do schools kill creativity?', date:'2026-04-24', duration:'19:22', desc:'Sir Ken Robinson makes an entertaining and profoundly moving case for creating an education system that nurtures rather than undermines creativity.' },
+      { title:'Your body language may shape who you are', date:'2026-04-23', duration:'21:03', desc:'Social psychologist Amy Cuddy argues that "power posing" can change your mindset and even your body chemistry.' },
+    ]
+  },
+  {
+    name: 'NPR News Now',
+    episodes: [
+      { title:'Morning Edition: Tech & Economy Roundup', date:'2026-04-25', duration:'05:00', desc:'Today\'s top stories covering the semiconductor industry outlook, Federal Reserve commentary, and developments in AI regulation.' },
+      { title:'Global Politics: Asia-Pacific Update',    date:'2026-04-24', duration:'05:00', desc:'An overview of diplomatic movements in the region, including bilateral trade talks and infrastructure investment announcements.' },
+    ]
+  },
+];
+
+const MOCK_WORLD_HISTORY = [
+  { year: 1953, text: 'James Watson 與 Francis Crick 在《自然》期刊發表 DNA 雙螺旋結構論文，改變生物學歷史。', link: 'https://en.wikipedia.org/wiki/Nucleic_acid_double_helix' },
+  { year: 1974, text: '葡萄牙「康乃馨革命」爆發，無血政變推翻薩拉查威權政府，開啟民主化進程。', link: 'https://en.wikipedia.org/wiki/Carnation_Revolution' },
+  { year: 1983, text: '美國先驅者 10 號探測器飛越冥王星軌道，成為第一個離開太陽系的人造物體。', link: 'https://en.wikipedia.org/wiki/Pioneer_10' },
+  { year: 1990, text: '哈伯太空望遠鏡由發現號太空梭送入軌道，開啟人類觀測宇宙的新時代。', link: 'https://en.wikipedia.org/wiki/Hubble_Space_Telescope' },
+  { year: 2005, text: 'YouTube 網站正式上線，改變全球影音內容的生產與消費方式。', link: 'https://en.wikipedia.org/wiki/YouTube' },
+  { year: 2015, text: '尼泊爾發生規模 7.8 強震，造成近 9,000 人罹難，大批世界遺產受損。', link: 'https://en.wikipedia.org/wiki/2015_Nepal_earthquake' },
+];
+
+const MOCK_PERSONAL_HISTORY = [
+  { year: 2018, title: '第一次獨自出國旅行：日本京都', desc: '搭乘人生第一班長途飛機，抵達關西機場後搭新幹線前往京都。在嵐山竹林與金閣寺之間，深深愛上日本的美學與文化。' },
+  { year: 2021, title: '完成第一個個人開源專案', desc: '花了三個月打造一個 CLI 工具並發布到 npm，獲得 200+ stars。那種被陌生人使用的感覺非常奇妙。' },
+  { year: 2023, title: '參加台北馬拉松，完成 21 公里半馬', desc: '訓練了六個月，最後以 2:18 完賽。過了 18 公里以後腿完全不是自己的，但終點線那一刻哭了出來。' },
+];
+
+// ─── CLOCK ───────────────────────────────────────────────────────────────────
+
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
+const MONTHS_ZH = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+
+  const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日　星期${WEEKDAYS[now.getDay()]}`;
+  document.getElementById('dateInfo').textContent = dateStr;
+
+  const hr = now.getHours();
+  const greet = hr < 6 ? '深夜好' : hr < 12 ? '早安 ☀️' : hr < 18 ? '午安 🌤' : '晚安 🌙';
+  document.getElementById('greeting').textContent = greet;
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── FLASHCARD ───────────────────────────────────────────────────────────────
+
+let wordIdx = 0;
+
+function renderWord(idx) {
+  const v = VOCAB[idx];
+  document.getElementById('fcWord').textContent     = v.word;
+  document.getElementById('fcPhonetic').textContent = v.phonetic;
+  document.getElementById('fcPos').textContent      = v.pos;
+  document.getElementById('fcDef').textContent      = v.def;
+  document.getElementById('fcEx').textContent       = `"${v.ex}"`;
+  document.getElementById('wordIdx').textContent    = `${idx + 1} / ${VOCAB.length}`;
+  document.getElementById('flashcard').classList.remove('flipped');
+}
+
+document.getElementById('flashcard').addEventListener('click', () => {
+  document.getElementById('flashcard').classList.toggle('flipped');
+});
+document.getElementById('flipCard').addEventListener('click', () => {
+  document.getElementById('flashcard').classList.toggle('flipped');
+});
+document.getElementById('prevWord').addEventListener('click', () => {
+  wordIdx = (wordIdx - 1 + VOCAB.length) % VOCAB.length;
+  renderWord(wordIdx);
+});
+document.getElementById('nextWord').addEventListener('click', () => {
+  wordIdx = (wordIdx + 1) % VOCAB.length;
+  renderWord(wordIdx);
+});
+
+renderWord(0);
+
+// ─── CALENDAR ────────────────────────────────────────────────────────────────
+
+const today = new Date();
+let calYear  = today.getFullYear();
+let calMonth = today.getMonth();
+
+function renderCalendar() {
+  document.getElementById('monthLbl').textContent = `${calYear}年${calMonth + 1}月`;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+
+  const grid = document.getElementById('calDays');
+  grid.innerHTML = '';
+
+  const total = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < total; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+
+    let day, isCurrentMonth = true;
+    if (i < firstDay) {
+      day = daysInPrev - firstDay + i + 1;
+      isCurrentMonth = false;
+      cell.classList.add('other-month');
+    } else if (i >= firstDay + daysInMonth) {
+      day = i - firstDay - daysInMonth + 1;
+      isCurrentMonth = false;
+      cell.classList.add('other-month');
+    } else {
+      day = i - firstDay + 1;
+    }
+
+    if (isCurrentMonth && day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear()) {
+      cell.classList.add('today');
+    }
+
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const eventsOnDay = MOCK_EVENTS.filter(e => e.date === dateStr);
+
+    const numEl = document.createElement('div');
+    numEl.className = 'day-num';
+    numEl.textContent = day;
+    cell.appendChild(numEl);
+
+    if (eventsOnDay.length) {
+      const dots = document.createElement('div');
+      dots.className = 'day-dots';
+      eventsOnDay.slice(0, 3).forEach(ev => {
+        const dot = document.createElement('div');
+        dot.className = 'day-dot';
+        dot.style.background = ev.color;
+        dots.appendChild(dot);
+      });
+      cell.appendChild(dots);
+    }
+
+    grid.appendChild(cell);
+  }
+
+  renderUpcoming();
+}
+
+function renderUpcoming() {
+  const now = new Date();
+  const nowStr = now.toISOString().slice(0, 10);
+  const upcoming = MOCK_EVENTS
+    .filter(e => e.date >= nowStr)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5);
+
+  const ul = document.getElementById('upcomingList');
+  if (!upcoming.length) { ul.innerHTML = '<span class="empty">無近期事件</span>'; return; }
+
+  ul.innerHTML = upcoming.map(ev => {
+    const d = new Date(ev.date + 'T00:00:00');
+    const label = `${d.getMonth()+1}/${d.getDate()}（${WEEKDAYS[d.getDay()]}）${ev.time ? ' ' + ev.time : ''}`;
+    return `<div class="event-row">
+      <div class="event-color-bar" style="background:${ev.color}"></div>
+      <div class="event-info">
+        <div class="event-title-txt">${ev.title}</div>
+        <div class="event-date-txt">${label}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
+renderCalendar();
+
+// ─── LINKS ────────────────────────────────────────────────────────────────────
+
+function renderLinks(filter) {
+  const q = (filter || '').toLowerCase();
+  const filtered = MOCK_LINKS.filter(l =>
+    l.name.toLowerCase().includes(q) || l.cat.toLowerCase().includes(q)
+  );
+
+  const byCategory = {};
+  filtered.forEach(l => {
+    (byCategory[l.cat] = byCategory[l.cat] || []).push(l);
+  });
+
+  const body = document.getElementById('linksBody');
+  if (!filtered.length) { body.innerHTML = '<div class="empty">無符合結果</div>'; return; }
+
+  body.innerHTML = Object.entries(byCategory).map(([cat, items]) => `
+    <div>
+      <div class="link-cat-name">${cat}</div>
+      <div class="link-items">
+        ${items.map(l => `
+          <div class="link-item">
+            <a href="${l.url}" target="_blank" rel="noopener">
+              <div class="link-icon"><i class="${l.icon}"></i></div>
+              <div class="link-name">${l.name}</div>
+            </a>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('linkFilter').addEventListener('input', e => renderLinks(e.target.value));
+renderLinks('');
+
+// ─── NEWS ─────────────────────────────────────────────────────────────────────
+
+function renderNews() {
+  document.getElementById('newsBody').innerHTML = MOCK_NEWS.map(n => `
+    <div class="news-item">
+      <div class="news-content">
+        <div class="news-meta">
+          <span class="news-source">${n.source}</span>
+          <span class="news-date">${n.date}</span>
+        </div>
+        <a class="news-title" href="${n.url}" target="_blank" rel="noopener">${n.title}</a>
+        <div class="news-desc">${n.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+renderNews();
+
+// ─── PODCAST ─────────────────────────────────────────────────────────────────
+
+function renderPodcast() {
+  document.getElementById('podcastBody').innerHTML = MOCK_PODCASTS.map(pod => `
+    <div class="podcast-section">
+      <div class="podcast-hd-row">
+        <div class="podcast-name"><i class="fas fa-podcast"></i> ${pod.name}</div>
+      </div>
+      ${pod.episodes.map(ep => `
+        <div class="episode-item">
+          <div class="ep-meta">
+            <span class="ep-date">${ep.date}</span>
+            <span class="ep-duration"><i class="fas fa-clock"></i> ${ep.duration}</span>
+          </div>
+          <a class="ep-title" href="#" onclick="return false">${ep.title}</a>
+          <div class="ep-desc">${ep.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+renderPodcast();
+
+// ─── WORLD HISTORY ────────────────────────────────────────────────────────────
+
+function renderWorldHistory() {
+  const now = new Date();
+  const mm  = String(now.getMonth() + 1).padStart(2, '0');
+  const dd  = String(now.getDate()).padStart(2, '0');
+  document.getElementById('historyDateBadge').textContent = `${now.getMonth()+1}月${now.getDate()}日`;
+
+  document.getElementById('worldHistoryBody').innerHTML = MOCK_WORLD_HISTORY.map(h => `
+    <div class="history-item">
+      <div class="history-year">${h.year}</div>
+      <div class="history-content">
+        <div class="history-text">${h.text}</div>
+        ${h.link ? `<a class="history-link" href="${h.link}" target="_blank" rel="noopener">Wikipedia ↗</a>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+renderWorldHistory();
+
+// ─── PERSONAL HISTORY ─────────────────────────────────────────────────────────
+
+function renderPersonalHistory() {
+  const now = new Date();
+  document.getElementById('phDateBadge').textContent = `${now.getMonth()+1}月${now.getDate()}日`;
+
+  document.getElementById('personalHistoryBody').innerHTML = MOCK_PERSONAL_HISTORY.map(p => `
+    <div class="ph-item">
+      <div class="ph-year">${p.year}</div>
+      <div class="ph-content">
+        <div class="ph-title">${p.title}</div>
+        ${p.desc ? `<div class="ph-desc">${p.desc}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+renderPersonalHistory();
+</script>
+</body>
+</html>
