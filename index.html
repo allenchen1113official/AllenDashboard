@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- 使用者填寫 config.js 後即可連線 Supabase -->
+  <script src="config.js"></script>
 </head>
 <body>
 <div id="app">
@@ -24,8 +28,18 @@
     </div>
     <div class="header-right">
       <span class="greeting" id="greeting"></span>
+      <span class="db-badge db-pending" id="dbBadge" title="Supabase 狀態">
+        <i class="fas fa-database"></i> <span id="dbLabel">連線中…</span>
+      </span>
     </div>
   </header>
+
+  <!-- DB 未設定提示列 -->
+  <div class="db-banner" id="dbBanner" style="display:none">
+    <i class="fas fa-triangle-exclamation"></i>
+    <span>Supabase 尚未設定，資料暫存於瀏覽器。請編輯 <code>config.js</code> 並在 Supabase SQL Editor 執行 <code>schema.sql</code>。</span>
+    <button class="db-banner-close" onclick="this.parentElement.style.display='none'">✕</button>
+  </div>
 
   <!-- ── MAIN GRID ── -->
   <main class="dashboard">
@@ -125,6 +139,39 @@
       </section>
 
     </div><!-- /row-bottom -->
+
+    <!-- ROW 3 : 歷史上的今天 ｜ 艾倫歷史上的今天 -->
+    <div class="row row-history">
+
+      <!-- World History -->
+      <section class="card card-world-history">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-landmark"></i> 歷史上的今天</span>
+          <div class="card-actions">
+            <span class="date-badge" id="historyDateBadge"></span>
+            <button class="ibtn" id="refreshHistoryBtn" title="重新整理"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="history-body" id="worldHistoryBody">
+          <div class="loading"><i class="fas fa-spinner fa-spin"></i> 載入中…</div>
+        </div>
+      </section>
+
+      <!-- Personal History -->
+      <section class="card card-personal-history">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-book-open"></i> 艾倫歷史上的今天</span>
+          <div class="card-actions">
+            <span class="date-badge" id="phDateBadge"></span>
+            <button class="ibtn" id="addPersonalHistoryBtn" title="新增記事"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div class="personal-history-body" id="personalHistoryBody">
+          <div class="empty">今日暫無個人記事</div>
+        </div>
+      </section>
+
+    </div><!-- /row-history -->
 
   </main>
 </div><!-- /#app -->
@@ -226,6 +273,26 @@
   </div>
 </div>
 
+<!-- Personal History Modal -->
+<div class="backdrop" id="phBackdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>新增個人記事</h3>
+      <button class="ibtn" id="closePHModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <input type="number" id="phYear"  placeholder="年份 * (如：2018)"            class="finput" min="1900" max="2099" />
+      <input type="text"   id="phTitle" placeholder="標題 * (如：第一次去日本旅行)" class="finput" />
+      <textarea            id="phDesc"  placeholder="描述（選填）…"                 class="ftextarea"></textarea>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost"   id="cancelPHModal">取消</button>
+      <button class="btn btn-primary" id="savePHBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
+
 </body>
 </html>
