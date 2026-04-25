@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Allen's Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-bolt">⚡</span>
+      <h1>Allen's Dashboard</h1>
+    </div>
+    <div class="header-clock">
+      <div class="clock-time" id="clock">--:--:--</div>
+      <div class="clock-date" id="dateInfo">載入中...</div>
+    </div>
+    <div class="header-right">
+      <span class="greeting" id="greeting"></span>
+    </div>
+  </header>
+
+  <!-- ── MAIN GRID ── -->
+  <main class="dashboard">
+
+    <!-- ROW 1 : English ｜ Calendar ｜ Links -->
+    <div class="row row-top">
+
+      <!-- English Learning -->
+      <section class="card card-english">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-graduation-cap"></i> 英文學習</span>
+          <div class="card-actions">
+            <button class="ibtn" id="prevWord" title="上一個"><i class="fas fa-chevron-left"></i></button>
+            <span class="word-idx" id="wordIdx">1 / 50</span>
+            <button class="ibtn" id="nextWord" title="下一個"><i class="fas fa-chevron-right"></i></button>
+            <button class="ibtn" id="flipCard" title="翻轉卡片"><i class="fas fa-rotate"></i></button>
+          </div>
+        </div>
+
+        <div class="flashcard" id="flashcard">
+          <div class="fc-inner" id="fcInner">
+            <div class="fc-front">
+              <div class="fc-word" id="fcWord">Loading…</div>
+              <div class="fc-phonetic" id="fcPhonetic"></div>
+              <div class="fc-pos" id="fcPos"></div>
+              <div class="fc-hint">點擊翻轉查看定義</div>
+            </div>
+            <div class="fc-back">
+              <div class="fc-def" id="fcDef"></div>
+              <div class="fc-ex" id="fcEx"></div>
+            </div>
+          </div>
+        </div>
+
+        <textarea class="word-notes" id="wordNotes" placeholder="📝 學習筆記（自動儲存）…"></textarea>
+      </section>
+
+      <!-- Calendar -->
+      <section class="card card-calendar">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-calendar-alt"></i> 行事曆</span>
+          <div class="card-actions">
+            <button class="ibtn" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+            <span class="month-lbl" id="monthLbl">2024年1月</span>
+            <button class="ibtn" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+            <button class="ibtn" id="addEventBtn" title="新增事件"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div class="cal-weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+        <div class="upcoming-hd">近期事件</div>
+        <div class="upcoming-list" id="upcomingList"><span class="empty">無近期事件</span></div>
+      </section>
+
+      <!-- Quick Links -->
+      <section class="card card-links">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-bookmark"></i> 常用連結</span>
+          <div class="card-actions">
+            <input type="text" id="linkFilter" placeholder="搜尋…" class="mini-search" />
+            <button class="ibtn" id="addLinkBtn" title="新增連結"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div class="links-body" id="linksBody"></div>
+      </section>
+
+    </div><!-- /row-top -->
+
+    <!-- ROW 2 : News ｜ Podcast -->
+    <div class="row row-bottom">
+
+      <!-- News Feed -->
+      <section class="card card-news">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-newspaper"></i> 新聞訂閱</span>
+          <div class="card-actions">
+            <div class="kw-bar" id="kwBar"></div>
+            <button class="ibtn" id="newsSettingsBtn" title="設定"><i class="fas fa-cog"></i></button>
+            <button class="ibtn" id="refreshNewsBtn" title="重新整理"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="news-body" id="newsBody"><div class="loading"><i class="fas fa-spinner fa-spin"></i> 載入中…</div></div>
+      </section>
+
+      <!-- Podcast -->
+      <section class="card card-podcast">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-headphones"></i> Podcast 摘要</span>
+          <div class="card-actions">
+            <button class="ibtn" id="addPodcastBtn" title="新增 Podcast"><i class="fas fa-plus"></i></button>
+            <button class="ibtn" id="refreshPodcastBtn" title="重新整理"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="podcast-body" id="podcastBody"><div class="loading"><i class="fas fa-spinner fa-spin"></i> 載入中…</div></div>
+      </section>
+
+    </div><!-- /row-bottom -->
+
+  </main>
+</div><!-- /#app -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Event Modal -->
+<div class="backdrop" id="evtBackdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>新增事件</h3>
+      <button class="ibtn" id="closeEvtModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <input type="text"  id="evtTitle"  placeholder="事件名稱 *"       class="finput" />
+      <input type="date"  id="evtDate"                                   class="finput" />
+      <input type="time"  id="evtTime"                                   class="finput" />
+      <textarea           id="evtNote"   placeholder="備註…"             class="ftextarea"></textarea>
+      <select             id="evtColor"                                   class="fselect">
+        <option value="#58a6ff">🔵 藍色</option>
+        <option value="#3fb950">🟢 綠色</option>
+        <option value="#f85149">🔴 紅色</option>
+        <option value="#bc8cff">🟣 紫色</option>
+        <option value="#d29922">🟠 橘色</option>
+      </select>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="cancelEvtModal">取消</button>
+      <button class="btn btn-primary" id="saveEvtBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Link Modal -->
+<div class="backdrop" id="lnkBackdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>新增連結</h3>
+      <button class="ibtn" id="closeLnkModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <input type="text" id="lnkName"     placeholder="名稱 *"                 class="finput" />
+      <input type="url"  id="lnkUrl"      placeholder="URL * (https://…)"      class="finput" />
+      <input type="text" id="lnkCategory" placeholder="分類（如：工作、學習）"  class="finput" />
+      <input type="text" id="lnkIcon"     placeholder="Font Awesome class（如：fab fa-github）" class="finput" />
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="cancelLnkModal">取消</button>
+      <button class="btn btn-primary" id="saveLnkBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- News Settings Modal -->
+<div class="backdrop" id="newsBackdrop" style="display:none">
+  <div class="modal modal-wide">
+    <div class="modal-hd">
+      <h3>新聞設定</h3>
+      <button class="ibtn" id="closeNewsModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <label class="flabel">關鍵字訂閱</label>
+      <div class="row-input">
+        <input type="text" id="kwInput"  placeholder="輸入關鍵字後按 Enter 新增" class="finput" />
+        <button class="btn btn-primary" id="addKwBtn">新增</button>
+      </div>
+      <div class="kw-preview" id="kwPreview"></div>
+
+      <label class="flabel" style="margin-top:18px">RSS 訂閱來源</label>
+      <div class="row-input">
+        <input type="url"  id="feedUrl"  placeholder="RSS Feed URL"  class="finput" />
+        <input type="text" id="feedName" placeholder="來源名稱"      class="finput feed-name-input" />
+        <button class="btn btn-primary" id="addFeedBtn">新增</button>
+      </div>
+      <div class="feeds-list" id="feedsList"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="cancelNewsModal">取消</button>
+      <button class="btn btn-primary" id="saveNewsBtn">儲存並重新整理</button>
+    </div>
+  </div>
+</div>
+
+<!-- Podcast Modal -->
+<div class="backdrop" id="podBackdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>新增 Podcast</h3>
+      <button class="ibtn" id="closePodModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <input type="text" id="podName" placeholder="Podcast 名稱 *"  class="finput" />
+      <input type="url"  id="podUrl"  placeholder="RSS Feed URL *"   class="finput" />
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="cancelPodModal">取消</button>
+      <button class="btn btn-primary" id="savePodBtn">新增</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
