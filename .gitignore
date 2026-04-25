@@ -1,0 +1,17 @@
+# Appwrite credentials — DO NOT commit
+config.js
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# node_modules (if serve or other tools are used locally)
+node_modules/
