@@ -1,45 +1,44 @@
 -- ═══════════════════════════════════════════════════════════
---  Allen Dashboard — Supabase Schema
---  在 Supabase 專案的 SQL Editor 貼上並執行此檔案
+--  此檔案已改用 Appwrite（非 SQL 資料庫）
+--  請依下方說明在 Appwrite Console 手動建立 Collection
+--
+--  Console 位址：https://cloud.appwrite.io
 -- ═══════════════════════════════════════════════════════════
 
--- 行事曆事件
-CREATE TABLE IF NOT EXISTS public.calendar_events (
-  id         TEXT        PRIMARY KEY,
-  title      TEXT        NOT NULL,
-  date       TEXT        NOT NULL,
-  time       TEXT        NOT NULL DEFAULT '',
-  note       TEXT        NOT NULL DEFAULT '',
-  color      TEXT        NOT NULL DEFAULT '#58a6ff',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- ┌─────────────────────────────────────────────────────────┐
+-- │  Collection 1：dashboard_config                         │
+-- ├─────────────────────────────────────────────────────────┤
+-- │  Attribute  │ Type    │ Size   │ Required │ Default     │
+-- │  key        │ String  │ 100    │ ✓        │ -           │
+-- │  value      │ String  │ 65535  │ ✓        │ -           │
+-- ├─────────────────────────────────────────────────────────┤
+-- │  Index：key (unique)                                    │
+-- │  Permissions：any → create / read / update / delete    │
+-- └─────────────────────────────────────────────────────────┘
 
--- 儀表板設定（key-value）
---  key 值：word_idx | links | keywords | feeds | podcasts | word_notes
-CREATE TABLE IF NOT EXISTS public.dashboard_config (
-  key        TEXT        PRIMARY KEY,
-  value      JSONB       NOT NULL DEFAULT 'null',
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- ┌─────────────────────────────────────────────────────────┐
+-- │  Collection 2：calendar_events                          │
+-- ├─────────────────────────────────────────────────────────┤
+-- │  Attribute  │ Type    │ Size   │ Required │             │
+-- │  title      │ String  │ 500    │ ✓        │             │
+-- │  date       │ String  │ 10     │ ✓        │ YYYY-MM-DD  │
+-- │  time       │ String  │ 10     │          │             │
+-- │  note       │ String  │ 2000   │          │             │
+-- │  color      │ String  │ 20     │          │ #58a6ff     │
+-- ├─────────────────────────────────────────────────────────┤
+-- │  Permissions：any → create / read / update / delete    │
+-- └─────────────────────────────────────────────────────────┘
 
--- 艾倫歷史上的今天（個人記事）
-CREATE TABLE IF NOT EXISTS public.personal_history (
-  id          TEXT        PRIMARY KEY,
-  title       TEXT        NOT NULL,
-  description TEXT        NOT NULL DEFAULT '',
-  year        INTEGER     NOT NULL,
-  month       INTEGER     NOT NULL,   -- 1-12
-  day         INTEGER     NOT NULL,   -- 1-31
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- ── Row Level Security ────────────────────────────────────
--- 個人使用：停用 RLS，anon key 即可讀寫
--- 若部署到公開網路，請啟用 auth 並加入 RLS policy
-ALTER TABLE public.calendar_events  DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.dashboard_config DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.personal_history DISABLE ROW LEVEL SECURITY;
-
--- ── Index ────────────────────────────────────────────────
-CREATE INDEX IF NOT EXISTS idx_cal_date    ON public.calendar_events  (date);
-CREATE INDEX IF NOT EXISTS idx_ph_month_day ON public.personal_history (month, day);
+-- ┌─────────────────────────────────────────────────────────┐
+-- │  Collection 3：personal_history                         │
+-- ├─────────────────────────────────────────────────────────┤
+-- │  Attribute   │ Type     │ Required │                    │
+-- │  title       │ String   │ ✓        │                    │
+-- │  description │ String   │          │                    │
+-- │  year        │ Integer  │ ✓        │                    │
+-- │  month       │ Integer  │ ✓        │ 1-12              │
+-- │  day         │ Integer  │ ✓        │ 1-31              │
+-- ├─────────────────────────────────────────────────────────┤
+-- │  Index：month + day (key)                               │
+-- │  Permissions：any → create / read / update / delete    │
+-- └─────────────────────────────────────────────────────────┘

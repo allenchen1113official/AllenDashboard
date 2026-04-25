@@ -98,66 +98,111 @@ let S = {
 };
 
 // ─────────────────────────────────────────────
-// 4. SUPABASE LAYER
+// 4. APPWRITE LAYER
 // ─────────────────────────────────────────────
-let db = null;
+let awDb = null;
+const configDocIds = {}; // cache: key → Appwrite $id
 
-async function initSupabase() {
+async function initAppwrite() {
   try {
-    if (typeof window.supabase === 'undefined') return false;
-    if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_') ||
-        !SUPABASE_ANON || SUPABASE_ANON.includes('YOUR_')) return false;
-    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-    const { error } = await db.from('dashboard_config').select('key').limit(1);
-    if (error) { db = null; return false; }
+    if (typeof window.Appwrite === 'undefined') return false;
+    if (!APPWRITE_PROJECT_ID || APPWRITE_PROJECT_ID.includes('YOUR_') ||
+        !APPWRITE_DB_ID      || APPWRITE_DB_ID.includes('YOUR_'))      return false;
+    const { Client, Databases } = window.Appwrite;
+    const client = new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID);
+    awDb = new Databases(client);
+    // Connection test
+    await awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_CONFIG, []);
     return true;
-  } catch (_) { db = null; return false; }
+  } catch (_) { awDb = null; return false; }
 }
 
 async function loadFromDB() {
-  if (!db) return;
+  if (!awDb) return;
   try {
+    const { Query } = window.Appwrite;
     const now = new Date();
     const [r1, r2, r3] = await Promise.all([
-      db.from('calendar_events').select('*').order('date'),
-      db.from('dashboard_config').select('*'),
-      db.from('personal_history').select('*')
-        .eq('month', now.getMonth() + 1).eq('day', now.getDate()).order('year'),
+      awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_EVENTS,
+        [Query.orderAsc('date'), Query.limit(200)]),
+      awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_CONFIG,
+        [Query.limit(20)]),
+      awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_HISTORY,
+        [Query.equal('month', now.getMonth() + 1), Query.equal('day', now.getDate()),
+         Query.orderAsc('year'), Query.limit(200)]),
     ]);
-    if (r1.data) S.events = r1.data;
-    if (r2.data) {
-      const OK = new Set(['word_idx','links','keywords','feeds','podcasts','word_notes']);
-      r2.data.forEach(({ key, value }) => { if (OK.has(key)) S[key] = value; });
-    }
-    if (r3.data) S.personalHistory = r3.data;
+    // Calendar events: Appwrite $id → our id
+    S.events = r1.documents.map(d => ({
+      id: d.$id, title: d.title, date: d.date,
+      time: d.time || '', note: d.note || '', color: d.color || '#58a6ff',
+    }));
+    // Config: values stored as JSON strings
+    const OK = new Set(['word_idx','links','keywords','feeds','podcasts','word_notes']);
+    r2.documents.forEach(d => {
+      configDocIds[d.key] = d.$id;
+      if (OK.has(d.key)) { try { S[d.key] = JSON.parse(d.value); } catch (_) {} }
+    });
+    // Personal history
+    S.personalHistory = r3.documents.map(d => ({
+      id: d.$id, title: d.title, description: d.description || '',
+      year: d.year, month: d.month, day: d.day,
+    }));
   } catch (e) { console.error('loadFromDB:', e); }
 }
 
 function syncConfig(key) {
-  if (!db) { saveLocal(); return; }
-  db.from('dashboard_config')
-    .upsert({ key, value: S[key], updated_at: new Date().toISOString() }, { onConflict: 'key' })
-    .then(({ error }) => error && console.error('syncConfig', key, error.message));
+  if (!awDb) { saveLocal(); return; }
+  _syncConfigAsync(key).catch(e => { console.error('syncConfig', key, e); saveLocal(); });
 }
+async function _syncConfigAsync(key) {
+  const { ID, Query } = window.Appwrite;
+  const valueStr = JSON.stringify(S[key]);
+  if (configDocIds[key]) {
+    await awDb.updateDocument(APPWRITE_DB_ID, APPWRITE_COL_CONFIG, configDocIds[key], { value: valueStr });
+  } else {
+    const res = await awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_CONFIG,
+      [Query.equal('key', key), Query.limit(1)]);
+    if (res.documents.length > 0) {
+      configDocIds[key] = res.documents[0].$id;
+      await awDb.updateDocument(APPWRITE_DB_ID, APPWRITE_COL_CONFIG, configDocIds[key], { value: valueStr });
+    } else {
+      const doc = await awDb.createDocument(APPWRITE_DB_ID, APPWRITE_COL_CONFIG,
+        ID.unique(), { key, value: valueStr });
+      configDocIds[key] = doc.$id;
+    }
+  }
+}
+
 function syncEvent(evt) {
-  if (!db) { saveLocal(); return; }
-  db.from('calendar_events').upsert(evt, { onConflict: 'id' })
-    .then(({ error }) => error && console.error('syncEvent', error.message));
+  if (!awDb) { saveLocal(); return; }
+  _syncDocAsync(APPWRITE_COL_EVENTS, evt.id, { title: evt.title, date: evt.date, time: evt.time, note: evt.note, color: evt.color })
+    .catch(e => console.error('syncEvent', e));
 }
 function deleteEventDB(id) {
-  if (!db) { saveLocal(); return; }
-  db.from('calendar_events').delete().eq('id', id)
-    .then(({ error }) => error && console.error('deleteEventDB', error.message));
+  if (!awDb) { saveLocal(); return; }
+  awDb.deleteDocument(APPWRITE_DB_ID, APPWRITE_COL_EVENTS, id)
+    .catch(e => console.error('deleteEventDB', e));
 }
 function syncPH(item) {
-  if (!db) return;
-  db.from('personal_history').upsert(item, { onConflict: 'id' })
-    .then(({ error }) => error && console.error('syncPH', error.message));
+  if (!awDb) return;
+  _syncDocAsync(APPWRITE_COL_HISTORY, item.id,
+    { title: item.title, description: item.description, year: item.year, month: item.month, day: item.day })
+    .catch(e => console.error('syncPH', e));
 }
 function deletePHDB(id) {
-  if (!db) return;
-  db.from('personal_history').delete().eq('id', id)
-    .then(({ error }) => error && console.error('deletePHDB', error.message));
+  if (!awDb) return;
+  awDb.deleteDocument(APPWRITE_DB_ID, APPWRITE_COL_HISTORY, id)
+    .catch(e => console.error('deletePHDB', e));
+}
+// Shared upsert helper: try update → fallback create
+async function _syncDocAsync(colId, docId, data) {
+  try {
+    await awDb.updateDocument(APPWRITE_DB_ID, colId, docId, data);
+  } catch (e) {
+    if (e.code === 404) {
+      await awDb.createDocument(APPWRITE_DB_ID, colId, docId, data);
+    } else throw e;
+  }
 }
 
 function setDBStatus(status) {
@@ -165,11 +210,11 @@ function setDBStatus(status) {
   const label = document.getElementById('dbLabel');
   if (!badge || !label) return;
   badge.className = `db-badge db-${status}`;
-  label.textContent = status === 'connected' ? 'Supabase ✓'
+  label.textContent = status === 'connected' ? 'Appwrite ✓'
                     : status === 'pending'   ? '連線中…' : '未連線';
-  badge.title = status === 'connected' ? '已連接 Supabase 資料庫'
+  badge.title = status === 'connected' ? '已連接 Appwrite 資料庫'
               : status === 'pending'   ? '正在連接資料庫…'
-              : '尚未設定 Supabase（資料暫存於瀏覽器）';
+              : '尚未設定 Appwrite（資料暫存於瀏覽器）';
 }
 function showDBBanner() {
   const b = document.getElementById('dbBanner');
@@ -724,7 +769,7 @@ function setupModals() {
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   setDBStatus('pending');
-  const ready = await initSupabase();
+  const ready = await initAppwrite();
   if (ready) {
     await loadFromDB();
     setDBStatus('connected');

@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <!-- Supabase JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <!-- 使用者填寫 config.js 後即可連線 Supabase -->
+  <!-- Appwrite Web SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@16/dist/iife/sdk.js"></script>
+  <!-- 使用者填寫 config.js 後即可連線 Appwrite -->
   <script src="config.js"></script>
 </head>
 <body>
@@ -37,7 +37,7 @@
   <!-- DB 未設定提示列 -->
   <div class="db-banner" id="dbBanner" style="display:none">
     <i class="fas fa-triangle-exclamation"></i>
-    <span>Supabase 尚未設定，資料暫存於瀏覽器。請編輯 <code>config.js</code> 並在 Supabase SQL Editor 執行 <code>schema.sql</code>。</span>
+    <span>Appwrite 尚未設定，資料暫存於瀏覽器。請編輯 <code>config.js</code>，並在 Appwrite Console 依 <code>schema.sql</code> 說明建立 Collection。</span>
     <button class="db-banner-close" onclick="this.parentElement.style.display='none'">✕</button>
   </div>
 
