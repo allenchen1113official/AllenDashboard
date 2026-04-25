@@ -63,16 +63,16 @@
    - **Name**：`Dashboard Config`
 3. 點選 **「Create」**
 
-### 3-2 新增欄位（Attributes）
+### 3-2 新增欄位（Columns）
 
-點選 **「Attributes」** 標籤，依序新增以下兩個欄位：
+點選 **「Columns」** 標籤，依序新增以下兩個欄位：
 
 #### 欄位 1：key
 
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `key` |
+| **Column ID** | `key` |
 | **Size** | `100` |
 | **Required** | ✅ 勾選 |
 | **Default** | （空白） |
@@ -85,7 +85,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `value` |
+| **Column ID** | `value` |
 | **Size** | `65535` |
 | **Required** | ✅ 勾選 |
 | **Default** | （空白） |
@@ -101,7 +101,7 @@
 |----------|----|
 | **Index ID** | `key_unique` |
 | **Type** | `Unique` |
-| **Attributes** | 選擇 `key`，Order 選 `ASC` |
+| **Columns** | 選擇 `key`，Order 選 `ASC` |
 
 點選 **「Create」**
 
@@ -135,16 +135,16 @@
    - **Name**：`Calendar Events`
 3. 點選 **「Create」**
 
-### 4-2 新增欄位（Attributes）
+### 4-2 新增欄位（Columns）
 
-點選 **「Attributes」** 標籤，依序新增以下五個欄位：
+點選 **「Columns」** 標籤，依序新增以下五個欄位：
 
 #### 欄位 1：title
 
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `title` |
+| **Column ID** | `title` |
 | **Size** | `500` |
 | **Required** | ✅ 勾選 |
 
@@ -153,7 +153,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `date` |
+| **Column ID** | `date` |
 | **Size** | `10` |
 | **Required** | ✅ 勾選 |
 
@@ -164,7 +164,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `time` |
+| **Column ID** | `time` |
 | **Size** | `10` |
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
@@ -174,7 +174,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `note` |
+| **Column ID** | `note` |
 | **Size** | `2000` |
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
@@ -184,7 +184,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `color` |
+| **Column ID** | `color` |
 | **Size** | `20` |
 | **Required** | ❌ 不勾選 |
 | **Default** | `#58a6ff` |
@@ -209,14 +209,14 @@
    - **Name**：`Personal History`
 3. 點選 **「Create」**
 
-### 5-2 新增欄位（Attributes）
+### 5-2 新增欄位（Columns）
 
 #### 欄位 1：title
 
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `title` |
+| **Column ID** | `title` |
 | **Size** | `500` |
 | **Required** | ✅ 勾選 |
 
@@ -225,7 +225,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `String` |
-| **Attribute ID** | `description` |
+| **Column ID** | `description` |
 | **Size** | `2000` |
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
@@ -235,7 +235,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `Integer` |
-| **Attribute ID** | `year` |
+| **Column ID** | `year` |
 | **Required** | ✅ 勾選 |
 | **Min** | `1900` |
 | **Max** | `2099` |
@@ -245,7 +245,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `Integer` |
-| **Attribute ID** | `month` |
+| **Column ID** | `month` |
 | **Required** | ✅ 勾選 |
 | **Min** | `1` |
 | **Max** | `12` |
@@ -255,7 +255,7 @@
 | 設定項目 | 值 |
 |----------|----|
 | **Type** | `Integer` |
-| **Attribute ID** | `day` |
+| **Column ID** | `day` |
 | **Required** | ✅ 勾選 |
 | **Min** | `1` |
 | **Max** | `31` |
@@ -268,7 +268,7 @@
 |----------|----|
 | **Index ID** | `month_day` |
 | **Type** | `Key` |
-| **Attributes** | 先選 `month`（ASC），再點 **「+ Add attribute」** 選 `day`（ASC） |
+| **Columns** | 先選 `month`（ASC），再點 **「+ Add column」** 選 `day`（ASC） |
 
 點選 **「Create」**
 
