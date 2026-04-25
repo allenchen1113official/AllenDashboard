@@ -71,7 +71,8 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `varchar` |
 | **Column ID** | `key` |
 | **Size** | `100` |
 | **Required** | ✅ 勾選 |
@@ -84,9 +85,9 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `text` |
 | **Column ID** | `value` |
-| **Size** | `65535` |
 | **Required** | ✅ 勾選 |
 | **Default** | （空白） |
 | **Array** | ❌ 不勾選 |
@@ -143,7 +144,8 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `varchar` |
 | **Column ID** | `title` |
 | **Size** | `500` |
 | **Required** | ✅ 勾選 |
@@ -152,7 +154,8 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `varchar` |
 | **Column ID** | `date` |
 | **Size** | `10` |
 | **Required** | ✅ 勾選 |
@@ -163,7 +166,8 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `varchar` |
 | **Column ID** | `time` |
 | **Size** | `10` |
 | **Required** | ❌ 不勾選 |
@@ -173,9 +177,9 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `text` |
 | **Column ID** | `note` |
-| **Size** | `2000` |
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
 
@@ -183,7 +187,8 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `varchar` |
 | **Column ID** | `color` |
 | **Size** | `20` |
 | **Required** | ❌ 不勾選 |
@@ -215,7 +220,8 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `varchar` |
 | **Column ID** | `title` |
 | **Size** | `500` |
 | **Required** | ✅ 勾選 |
@@ -224,9 +230,9 @@
 
 | 設定項目 | 值 |
 |----------|----|
-| **Type** | `String` |
+| **Type** | `Text` |
+| **Sub-type** | `text` |
 | **Column ID** | `description` |
-| **Size** | `2000` |
 | **Required** | ❌ 不勾選 |
 | **Default** | （空白） |
 
