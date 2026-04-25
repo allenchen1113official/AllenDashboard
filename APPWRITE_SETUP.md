@@ -1,0 +1,355 @@
+# Appwrite 資料庫設定說明
+
+本文件說明如何在 Appwrite Cloud 建立 Allen Dashboard 所需的資料庫與三個 Collection。
+
+---
+
+## 目錄
+
+1. [建立 Appwrite 帳號與專案](#1-建立-appwrite-帳號與專案)
+2. [建立 Database](#2-建立-database)
+3. [建立 Collection：dashboard_config](#3-建立-collection-dashboard_config)
+4. [建立 Collection：calendar_events](#4-建立-collection-calendar_events)
+5. [建立 Collection：personal_history](#5-建立-collection-personal_history)
+6. [填寫 config.js](#6-填寫-configjs)
+7. [驗證連線](#7-驗證連線)
+8. [常見問題](#8-常見問題)
+
+---
+
+## 1. 建立 Appwrite 帳號與專案
+
+1. 前往 **https://cloud.appwrite.io** 並點選「Sign Up」註冊帳號  
+   （已有帳號直接登入）
+
+2. 登入後點選右上角 **「Create Project」**
+
+3. 填寫：
+   - **Project name**：`AllenDashboard`（可自訂）
+   - **Region**：選擇離你最近的地區（例如 `Frankfurt`）
+
+4. 點選 **「Create」**
+
+5. 進入專案後，左側選單點選 **「Settings」→「General」**  
+   複製並記錄 **Project ID**（格式類似 `abc123def456`）
+
+---
+
+## 2. 建立 Database
+
+1. 左側選單點選 **「Databases」**
+
+2. 點選右上角 **「Create database」**
+
+3. 填寫：
+   - **Database ID**：點選旁邊的鉛筆圖示，輸入 `allen-dashboard`（或保留自動產生）
+   - **Name**：`AllenDashboard DB`
+
+4. 點選 **「Create」**
+
+5. 複製並記錄畫面上的 **Database ID**
+
+---
+
+## 3. 建立 Collection：dashboard_config
+
+> 儲存儀表板設定，包含關鍵字、連結、Podcast 清單等。
+
+### 3-1 建立 Collection
+
+1. 進入剛建立的 Database，點選 **「Create collection」**
+2. 填寫：
+   - **Collection ID**：`dashboard_config`
+   - **Name**：`Dashboard Config`
+3. 點選 **「Create」**
+
+### 3-2 新增 Attributes
+
+點選 **「Attributes」** 標籤，依序新增以下兩個欄位：
+
+#### Attribute 1：key
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `key` |
+| **Size** | `100` |
+| **Required** | ✅ 勾選 |
+| **Default** | （空白） |
+| **Array** | ❌ 不勾選 |
+
+點選 **「Create」**，等待狀態變成 `Available`
+
+#### Attribute 2：value
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `value` |
+| **Size** | `65535` |
+| **Required** | ✅ 勾選 |
+| **Default** | （空白） |
+| **Array** | ❌ 不勾選 |
+
+點選 **「Create」**，等待狀態變成 `Available`
+
+### 3-3 新增 Index
+
+點選 **「Indexes」** 標籤，點選 **「Create index」**：
+
+| 欄位 | 值 |
+|------|----|
+| **Index ID** | `key_unique` |
+| **Type** | `Unique` |
+| **Attributes** | 選擇 `key`，Order 選 `ASC` |
+
+點選 **「Create」**
+
+### 3-4 設定 Permissions
+
+點選 **「Settings」** 標籤，找到 **「Permissions」** 區塊：
+
+1. 點選 **「Add Role」** → 選 **「Any」**
+2. 勾選全部四個權限：
+   - ✅ `Create`
+   - ✅ `Read`
+   - ✅ `Update`
+   - ✅ `Delete`
+3. 點選 **「Update」** 儲存
+
+### 3-5 記錄 Collection ID
+
+從頁面頂端或 Settings 複製 **Collection ID**（`dashboard_config` 或自動生成的 ID）
+
+---
+
+## 4. 建立 Collection：calendar_events
+
+> 儲存行事曆事件。
+
+### 4-1 建立 Collection
+
+1. 回到 Database 頁面，點選 **「Create collection」**
+2. 填寫：
+   - **Collection ID**：`calendar_events`
+   - **Name**：`Calendar Events`
+3. 點選 **「Create」**
+
+### 4-2 新增 Attributes
+
+點選 **「Attributes」** 標籤，依序新增以下五個欄位：
+
+#### Attribute 1：title
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `title` |
+| **Size** | `500` |
+| **Required** | ✅ 勾選 |
+
+#### Attribute 2：date
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `date` |
+| **Size** | `10` |
+| **Required** | ✅ 勾選 |
+
+> 格式為 `YYYY-MM-DD`，例如 `2025-04-25`
+
+#### Attribute 3：time
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `time` |
+| **Size** | `10` |
+| **Required** | ❌ 不勾選 |
+| **Default** | （空白） |
+
+#### Attribute 4：note
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `note` |
+| **Size** | `2000` |
+| **Required** | ❌ 不勾選 |
+| **Default** | （空白） |
+
+#### Attribute 5：color
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `color` |
+| **Size** | `20` |
+| **Required** | ❌ 不勾選 |
+| **Default** | `#58a6ff` |
+
+### 4-3 設定 Permissions
+
+同 dashboard_config，將 **Role: Any** 設為 Create / Read / Update / Delete 全開。
+
+### 4-4 記錄 Collection ID
+
+---
+
+## 5. 建立 Collection：personal_history
+
+> 儲存「艾倫歷史上的今天」個人記事。
+
+### 5-1 建立 Collection
+
+1. 回到 Database 頁面，點選 **「Create collection」**
+2. 填寫：
+   - **Collection ID**：`personal_history`
+   - **Name**：`Personal History`
+3. 點選 **「Create」**
+
+### 5-2 新增 Attributes
+
+#### Attribute 1：title
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `title` |
+| **Size** | `500` |
+| **Required** | ✅ 勾選 |
+
+#### Attribute 2：description
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `String` |
+| **Attribute ID** | `description` |
+| **Size** | `2000` |
+| **Required** | ❌ 不勾選 |
+| **Default** | （空白） |
+
+#### Attribute 3：year
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `Integer` |
+| **Attribute ID** | `year` |
+| **Required** | ✅ 勾選 |
+| **Min** | `1900` |
+| **Max** | `2099` |
+
+#### Attribute 4：month
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `Integer` |
+| **Attribute ID** | `month` |
+| **Required** | ✅ 勾選 |
+| **Min** | `1` |
+| **Max** | `12` |
+
+#### Attribute 5：day
+
+| 欄位 | 值 |
+|------|----|
+| **Type** | `Integer` |
+| **Attribute ID** | `day` |
+| **Required** | ✅ 勾選 |
+| **Min** | `1` |
+| **Max** | `31` |
+
+### 5-3 新增 Index
+
+點選 **「Indexes」** 標籤，點選 **「Create index」**：
+
+| 欄位 | 值 |
+|------|----|
+| **Index ID** | `month_day` |
+| **Type** | `Key` |
+| **Attributes** | 先選 `month`（ASC），再點 `+ Add Attribute` 選 `day`（ASC） |
+
+點選 **「Create」**
+
+### 5-4 設定 Permissions
+
+同前，**Role: Any** → Create / Read / Update / Delete 全開。
+
+### 5-5 記錄 Collection ID
+
+---
+
+## 6. 填寫 config.js
+
+開啟專案根目錄的 `config.js`，將收集到的 ID 依序填入：
+
+```javascript
+const APPWRITE_ENDPOINT   = 'https://cloud.appwrite.io/v1';
+const APPWRITE_PROJECT_ID = '貼上 Project ID';
+const APPWRITE_DB_ID      = '貼上 Database ID';
+const APPWRITE_COL_CONFIG  = '貼上 dashboard_config 的 Collection ID';
+const APPWRITE_COL_EVENTS  = '貼上 calendar_events 的 Collection ID';
+const APPWRITE_COL_HISTORY = '貼上 personal_history 的 Collection ID';
+```
+
+> **注意**：`config.js` 包含 Appwrite 憑證，請勿提交至公開的 GitHub Repository。  
+> 建議在 `.gitignore` 中加入 `config.js`，或改用環境變數注入。
+
+---
+
+## 7. 驗證連線
+
+1. 用瀏覽器開啟 `index.html`（或透過本地 HTTP Server）
+2. 觀察右上角 DB badge：
+   - 🟡 **連線中…** → 正在初始化
+   - 🟢 **Appwrite ✓** → 連線成功，資料已同步至雲端
+   - 🔴 **未連線** → 請重新確認 `config.js` 中的 ID 是否正確
+
+3. 若出現黃色警示列，表示 `config.js` 中仍有 `YOUR_` 字樣尚未替換。
+
+---
+
+## 8. 常見問題
+
+### Q1：Permissions 設定後仍出現 401 Unauthorized
+
+**原因**：Collection 的 Permissions 未正確儲存，或 Project 的 Platform 未設定。
+
+**解法**：
+1. 左側選單 → **「Settings」** → **「Platforms」**
+2. 點選 **「Add Platform」** → 選擇 **「Web」**
+3. **Name**：`Local` / **Hostname**：`localhost`
+4. 若部署至外部網址，再新增對應 Hostname
+
+---
+
+### Q2：讀取資料時出現 403 Forbidden
+
+**原因**：Collection Permissions 未包含 `Read`。
+
+**解法**：進入對應 Collection → **Settings** → Permissions → 確認 `Any` 角色已勾選 `Read`。
+
+---
+
+### Q3：儲存設定後重整資料消失
+
+**原因**：通常是 `dashboard_config` 的 `key` 欄位未建立 **Unique Index**。
+
+**解法**：回到 dashboard_config → **Indexes** → 確認存在 `key_unique`（Type: Unique）。
+
+---
+
+### Q4：自架 Appwrite（Self-hosted）
+
+若使用自架版本，修改 `config.js` 中的 endpoint：
+
+```javascript
+const APPWRITE_ENDPOINT = 'https://your-appwrite-domain.com/v1';
+```
+
+其餘步驟完全相同。
+
+---
+
+*最後更新：2025-04-25*
