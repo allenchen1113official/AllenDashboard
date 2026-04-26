@@ -5,6 +5,8 @@
 ![展示模式](https://img.shields.io/badge/demo-available-58a6ff?style=flat-square)
 ![前端技術](https://img.shields.io/badge/frontend-HTML%20%2F%20CSS%20%2F%20JS-orange?style=flat-square)
 ![後端](https://img.shields.io/badge/backend-Appwrite%20Cloud-fd366e?style=flat-square)
+![加密](https://img.shields.io/badge/encryption-AES--256--GCM-3fb950?style=flat-square)
+![GitHub Pages](https://img.shields.io/badge/deploy-GitHub%20Pages-24292f?style=flat-square&logo=github)
 
 ---
 
@@ -56,18 +58,84 @@ npx serve .
 
 ---
 
+## 部署至 GitHub Pages
+
+### 一次性設定
+
+**1. 開啟 GitHub Pages**
+
+進入 Repo → **Settings → Pages → Source**，選擇 **「GitHub Actions」**。
+
+**2. 用 `setup.html` 產生加密設定**
+
+```bash
+npx serve .
+# 開啟 http://localhost:3000/setup.html
+# 填入 Appwrite IDs + 密碼短語 → 複製 APPWRITE_SALT 與 APPWRITE_CIPHER
+```
+
+**3. 填入 GitHub Secrets**
+
+進入 Repo → **Settings → Secrets and variables → Actions → New repository secret**，新增：
+
+| Secret 名稱 | 值 |
+|-------------|-----|
+| `APPWRITE_ENDPOINT` | `https://cloud.appwrite.io/v1`（可選，有預設值） |
+| `APPWRITE_SALT` | 從 setup.html 複製 |
+| `APPWRITE_CIPHER` | 從 setup.html 複製 |
+
+**4. 推送觸發部署**
+
+```bash
+git push origin main
+# GitHub Actions 自動執行，約 1 分鐘後網站上線
+```
+
+**5. 開啟網站，輸入密碼短語解鎖**
+
+GitHub Pages URL 格式：`https://<username>.github.io/<repo>/`
+
+> 若未設定 Secrets，網站自動以 **localStorage 模式**運行（無需資料庫，可正常使用）。
+
+---
+
+### 部署流程說明
+
+```
+push to main
+    │
+    ▼
+GitHub Actions (.github/workflows/deploy.yml)
+    │
+    ├─ 讀取 APPWRITE_SALT + APPWRITE_CIPHER from Secrets
+    ├─ 動態產生 config.js（加密內容，安全部署）
+    └─ 上傳靜態檔案 → GitHub Pages
+                            │
+                            ▼
+                   使用者開啟網站
+                   輸入密碼短語
+                   在瀏覽器端解密憑證
+                   連線 Appwrite ✓
+```
+
+---
+
 ## 檔案結構
 
 ```
 AllenDashboard/
-├── index.html          # 正式版主頁（連接 Appwrite）
-├── demo.html           # 展示頁面（Mock 資料，無需後端）
-├── app.js              # 全部業務邏輯（約 790 行）
-├── style.css           # 深色主題樣式（約 1150 行）
-├── config.js           # ⚠️ Appwrite 金鑰（列入 .gitignore）
-├── config.example.js   # config.js 範本
-├── schema.sql          # Appwrite Collection 結構參考
-└── APPWRITE_SETUP.md   # Appwrite 建立步驟詳細說明（繁體中文）
+├── .github/workflows/
+│   └── deploy.yml          # GitHub Pages 自動部署
+├── index.html              # 正式版主頁（連接 Appwrite）
+├── demo.html               # 展示頁面（Mock 資料，無需後端）
+├── setup.html              # Config 加密工具（本機使用）
+├── app.js                  # 全部業務邏輯（約 840 行）
+├── crypto.js               # AES-256-GCM 加密工具
+├── style.css               # 深色主題樣式（約 1150 行）
+├── config.js               # ⚠️ Appwrite 金鑰（列入 .gitignore）
+├── config.example.js       # config.js 範本（加密 / 明文兩種格式）
+├── schema.sql              # Appwrite Collection 結構參考
+└── APPWRITE_SETUP.md       # Appwrite 建立步驟詳細說明（繁體中文）
 ```
 
 ---
@@ -89,10 +157,12 @@ AllenDashboard/
 - **純前端 SPA**：HTML + CSS + Vanilla JavaScript，無任何框架
 - **樣式**：CSS Grid 三列深色主題，CSS perspective 翻牌動畫
 - **資料庫**：[Appwrite Cloud](https://cloud.appwrite.io) Web SDK v16
+- **加密**：Web Crypto API — AES-256-GCM + PBKDF2-SHA256（100,000 次迭代）
 - **新聞 / Podcast**：[rss2json.com](https://rss2json.com) RSS → JSON 代理
 - **歷史事件**：[Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) `/feed/onthisday`
 - **快取**：localStorage 30 分鐘 TTL（RSS、Wikipedia）
 - **字典**：[Free Dictionary API](https://dictionaryapi.dev)
+- **CI / CD**：GitHub Actions → GitHub Pages
 
 ---
 
