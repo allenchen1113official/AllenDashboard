@@ -84,6 +84,7 @@ const CACHE_TTL = 30 * 60 * 1000;
 // 3. STATE
 // ─────────────────────────────────────────────
 let S = {
+  ownerName:       'Allen',
   wordIdx:         0,
   flipped:         false,
   calDate:         new Date(),
@@ -195,7 +196,7 @@ async function loadFromDB() {
       color: d.color || '#58a6ff',
     })));
 
-    const OK = new Set(['word_idx','links','keywords','feeds','podcasts','word_notes']);
+    const OK = new Set(['ownerName','word_idx','links','keywords','feeds','podcasts','word_notes']);
     for (const d of r2.documents) {
       configDocIds[d.key] = d.$id;
       if (OK.has(d.key)) {
@@ -304,8 +305,8 @@ function showDBBanner() {
 // 5. LOCAL STORAGE FALLBACK
 // ─────────────────────────────────────────────
 function saveLocal() {
-  const { wordIdx, events, links, keywords, feeds, podcasts, wordNotes } = S;
-  try { localStorage.setItem('allen_dash', JSON.stringify({ wordIdx, events, links, keywords, feeds, podcasts, wordNotes })); }
+  const { ownerName, wordIdx, events, links, keywords, feeds, podcasts, wordNotes } = S;
+  try { localStorage.setItem('allen_dash', JSON.stringify({ ownerName, wordIdx, events, links, keywords, feeds, podcasts, wordNotes })); }
   catch (_) {}
 }
 function loadLocal() {
@@ -322,17 +323,29 @@ function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val));
 // ─────────────────────────────────────────────
 function initClock() { tick(); setInterval(tick, 1000); }
 
+// Apply owner name to page title and header h1
+function applyOwnerName() {
+  const name = S.ownerName || 'Allen';
+  document.title = `${name}'s Dashboard`;
+  const h1 = document.querySelector('.header-brand h1');
+  if (h1) h1.textContent = `${name}'s Dashboard`;
+  // Sync settings input if modal is open
+  const inp = el('settingsOwnerName');
+  if (inp && document.activeElement !== inp) inp.value = name;
+}
+
 function tick() {
-  const now = new Date();
+  const now  = new Date();
+  const name = S.ownerName || 'Allen';
   document.getElementById('clock').textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
   document.getElementById('dateInfo').textContent = now.toLocaleDateString('zh-TW', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   });
   const h = now.getHours();
   document.getElementById('greeting').textContent =
-    h < 6  ? '🌙 夜深了，注意休息' :
-    h < 12 ? '☀️ 早安，今天也要加油！' :
-    h < 18 ? '🌤 午安，保持專注！' : '🌆 晚安，辛苦了！';
+    h < 6  ? `🌙 ${name}，夜深了注意休息` :
+    h < 12 ? `☀️ 早安，${name}！今天也加油` :
+    h < 18 ? `🌤 午安，${name}！保持專注` : `🌆 晚安，${name}，辛苦了`;
 }
 
 // ─────────────────────────────────────────────
@@ -827,19 +840,21 @@ function setupModals() {
     el(closeId)?.addEventListener('click',  () => hideModal(backdropId));
     el(backdropId)?.addEventListener('click', e => { if (e.target === e.currentTarget) hideModal(backdropId); });
   };
-  wire('saveEvtBtn',  'cancelEvtModal', 'closeEvtModal', 'evtBackdrop', saveEvt);
-  wire('saveLnkBtn',  'cancelLnkModal', 'closeLnkModal', 'lnkBackdrop', saveLnk);
-  wire('saveNewsBtn', 'cancelNewsModal','closeNewsModal', 'newsBackdrop', saveNewsSettings);
-  wire('savePodBtn',  'cancelPodModal', 'closePodModal',  'podBackdrop', savePod);
-  wire('savePHBtn',   'cancelPHModal',  'closePHModal',   'phBackdrop',  savePH);
+  wire('saveEvtBtn',      'cancelEvtModal',      'closeEvtModal',      'evtBackdrop',      saveEvt);
+  wire('saveLnkBtn',      'cancelLnkModal',      'closeLnkModal',      'lnkBackdrop',      saveLnk);
+  wire('saveNewsBtn',     'cancelNewsModal',     'closeNewsModal',     'newsBackdrop',     saveNewsSettings);
+  wire('savePodBtn',      'cancelPodModal',      'closePodModal',      'podBackdrop',      savePod);
+  wire('savePHBtn',       'cancelPHModal',       'closePHModal',       'phBackdrop',       savePH);
+  wire('saveSettingsBtn', 'cancelSettingsModal', 'closeSettingsModal', 'settingsBackdrop', saveSettings);
 
+  el('settingsBtn')?.addEventListener('click', openSettings);
   el('addKwBtn')?.addEventListener('click', addKw);
   el('kwInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') addKw(); });
   el('addFeedBtn')?.addEventListener('click', addFeed);
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape')
-      ['evtBackdrop','lnkBackdrop','newsBackdrop','podBackdrop','phBackdrop'].forEach(hideModal);
+      ['evtBackdrop','lnkBackdrop','newsBackdrop','podBackdrop','phBackdrop','settingsBackdrop'].forEach(hideModal);
   });
 }
 
@@ -880,7 +895,25 @@ function requestPassphrase() {
 }
 
 // ─────────────────────────────────────────────
-// 17. INIT
+// 17. SETTINGS
+// ─────────────────────────────────────────────
+function openSettings() {
+  const inp = el('settingsOwnerName');
+  if (inp) inp.value = S.ownerName || 'Allen';
+  showModal('settingsBackdrop');
+}
+
+function saveSettings() {
+  const name = (el('settingsOwnerName').value || '').trim();
+  if (!name) { alert('請輸入名稱'); return; }
+  S.ownerName = name;
+  applyOwnerName();
+  syncConfig('ownerName');
+  hideModal('settingsBackdrop');
+}
+
+// ─────────────────────────────────────────────
+// 18. INIT
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Encrypted config: show passphrase modal before anything else
@@ -900,6 +933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setDBStatus('disconnected');
     showDBBanner();
   }
+  applyOwnerName();
   initClock();
   initCalendar();
   initEnglish();

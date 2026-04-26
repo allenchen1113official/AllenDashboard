@@ -30,7 +30,8 @@
     </div>
     <div class="header-right">
       <span class="greeting" id="greeting"></span>
-      <span class="db-badge db-pending" id="dbBadge" title="Supabase 狀態">
+      <button class="ibtn" id="settingsBtn" title="個人設定"><i class="fas fa-user-gear"></i></button>
+      <span class="db-badge db-pending" id="dbBadge" title="Appwrite 狀態">
         <i class="fas fa-database"></i> <span id="dbLabel">連線中…</span>
       </span>
     </div>
@@ -295,6 +296,32 @@
 </div>
 
 <script src="app.js"></script>
+
+<!-- ═══ SETTINGS MODAL ═══ -->
+<div class="backdrop" id="settingsBackdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3><i class="fas fa-user-gear" style="color:var(--blue);margin-right:8px"></i>個人設定</h3>
+      <button class="ibtn" id="closeSettingsModal"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd">
+      <label class="flabel">Dashboard 擁有者名稱</label>
+      <input type="text" id="settingsOwnerName"
+        placeholder="輸入你的名字（如：Allen）" class="finput"
+        maxlength="20" />
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">
+        此名稱將顯示於：標題列、問候語。<br>
+        儲存後自動同步至 Appwrite 雲端。
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" id="cancelSettingsModal">取消</button>
+      <button class="btn btn-primary" id="saveSettingsBtn">
+        <i class="fas fa-check"></i> 儲存
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ PASSPHRASE UNLOCK (shown only when APPWRITE_CIPHER is set) ═══ -->
 <div id="passphraseBackdrop" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,.96);
