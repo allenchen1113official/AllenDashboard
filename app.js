@@ -85,6 +85,7 @@ const CACHE_TTL = 30 * 60 * 1000;
 // ─────────────────────────────────────────────
 let S = {
   ownerName:       'Allen',
+  autoSpeak:       false,
   wordIdx:         0,
   flipped:         false,
   calDate:         new Date(),
@@ -196,7 +197,7 @@ async function loadFromDB() {
       color: d.color || '#58a6ff',
     })));
 
-    const OK = new Set(['ownerName','word_idx','links','keywords','feeds','podcasts','word_notes']);
+    const OK = new Set(['ownerName','autoSpeak','word_idx','links','keywords','feeds','podcasts','word_notes']);
     for (const d of r2.documents) {
       configDocIds[d.key] = d.$id;
       if (OK.has(d.key)) {
@@ -305,8 +306,8 @@ function showDBBanner() {
 // 5. LOCAL STORAGE FALLBACK
 // ─────────────────────────────────────────────
 function saveLocal() {
-  const { ownerName, wordIdx, events, links, keywords, feeds, podcasts, wordNotes } = S;
-  try { localStorage.setItem('allen_dash', JSON.stringify({ ownerName, wordIdx, events, links, keywords, feeds, podcasts, wordNotes })); }
+  const { ownerName, autoSpeak, wordIdx, events, links, keywords, feeds, podcasts, wordNotes } = S;
+  try { localStorage.setItem('allen_dash', JSON.stringify({ ownerName, autoSpeak, wordIdx, events, links, keywords, feeds, podcasts, wordNotes })); }
   catch (_) {}
 }
 function loadLocal() {
@@ -351,6 +352,74 @@ function tick() {
 // ─────────────────────────────────────────────
 // 7. ENGLISH LEARNING
 // ─────────────────────────────────────────────
+
+// ── TTS (Web Speech API) ─────────────────────
+const TTS = (() => {
+  if (!('speechSynthesis' in window)) return null;
+  let voice = null;
+
+  function loadVoice() {
+    const voices = window.speechSynthesis.getVoices();
+    voice = voices.find(v => /en[-_]US/i.test(v.lang) && v.localService)
+         || voices.find(v => /en[-_]US/i.test(v.lang))
+         || voices.find(v => v.lang.startsWith('en'))
+         || null;
+  }
+  loadVoice();
+  window.speechSynthesis.onvoiceschanged = loadVoice;
+
+  function speak(text, rate = 0.85) {
+    window.speechSynthesis.cancel();
+    const utt  = new SpeechSynthesisUtterance(text);
+    utt.lang   = 'en-US';
+    utt.rate   = rate;
+    utt.pitch  = 1;
+    if (voice) utt.voice = voice;
+
+    // Visual feedback: icon spins while speaking
+    const btn = el('speakWord');
+    const ico = btn?.querySelector('i');
+    if (ico) { ico.classList.add('fa-spin'); utt.onend = () => ico.classList.remove('fa-spin'); }
+
+    window.speechSynthesis.speak(utt);
+  }
+
+  return { speak };
+})();
+
+function speakWord() {
+  if (!TTS) return;
+  TTS.speak(VOCAB[S.wordIdx].word, 0.8);
+}
+
+function speakDef() {
+  if (!TTS) return;
+  const def = el('fcDef').textContent || '';
+  const ex  = (el('fcEx').textContent || '').replace(/^"|"$/g, '');
+  TTS.speak(def + (ex ? '.  Example: ' + ex : ''), 0.9);
+}
+
+function updateAutoSpeakBtn() {
+  const btn = el('autoSpeakToggle');
+  if (!btn) return;
+  const ico = btn.querySelector('i');
+  if (S.autoSpeak) {
+    ico.className = 'fas fa-volume-high';
+    btn.style.color = 'var(--blue)';
+    btn.title = '自動朗讀：開啟（點擊關閉）';
+  } else {
+    ico.className = 'fas fa-volume-slash';
+    btn.style.color = '';
+    btn.title = '自動朗讀：關閉（點擊開啟）';
+  }
+  // Hide TTS buttons when not supported
+  if (!TTS) {
+    ['speakWord','autoSpeakToggle','speakDef'].forEach(id => {
+      const b = el(id); if (b) b.style.display = 'none';
+    });
+  }
+}
+
 function initEnglish() {
   const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   S.wordIdx = doy % VOCAB.length;
@@ -359,11 +428,24 @@ function initEnglish() {
   el('prevWord').addEventListener('click', () => stepWord(-1));
   el('nextWord').addEventListener('click', () => stepWord(+1));
   el('flipCard').addEventListener('click', toggleFlip);
-  el('flashcard').addEventListener('click', toggleFlip);
+  el('flashcard').addEventListener('click', e => {
+    // Prevent flip when clicking speak button inside fc-back
+    if (e.target.closest('#speakDef')) return;
+    toggleFlip();
+  });
+  el('speakWord')?.addEventListener('click', e => { e.stopPropagation(); speakWord(); });
+  el('speakDef')?.addEventListener('click',  e => { e.stopPropagation(); speakDef(); });
+  el('autoSpeakToggle')?.addEventListener('click', () => {
+    S.autoSpeak = !S.autoSpeak;
+    updateAutoSpeakBtn();
+    syncConfig('autoSpeak');
+    if (S.autoSpeak) speakWord();
+  });
   el('wordNotes').addEventListener('input', e => {
     S.wordNotes[VOCAB[S.wordIdx].word] = e.target.value;
     syncConfig('word_notes');
   });
+  updateAutoSpeakBtn();
 }
 
 function stepWord(dir) {
@@ -372,6 +454,7 @@ function stepWord(dir) {
   el('flashcard').classList.remove('flipped');
   renderWord(); fetchWordAPI();
   syncConfig('word_idx');
+  if (S.autoSpeak) speakWord();
 }
 
 function renderWord() {
@@ -392,8 +475,8 @@ async function fetchWordAPI() {
     if (!res.ok) return;
     const data = await res.json();
     if (!Array.isArray(data) || !data[0]) return;
-    const entry  = data[0];
-    const phn    = entry.phonetics?.find(p => p.text)?.text;
+    const entry = data[0];
+    const phn   = entry.phonetics?.find(p => p.text)?.text;
     if (phn) el('fcPhonetic').textContent = phn;
     const m = entry.meanings?.[0];
     if (m) {
@@ -410,6 +493,7 @@ async function fetchWordAPI() {
 function toggleFlip() {
   S.flipped = !S.flipped;
   el('flashcard').classList.toggle('flipped', S.flipped);
+  if (S.autoSpeak && S.flipped) speakDef();
 }
 
 // ─────────────────────────────────────────────
