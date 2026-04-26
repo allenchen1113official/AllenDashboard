@@ -997,7 +997,174 @@ function saveSettings() {
 }
 
 // ─────────────────────────────────────────────
-// 18. INIT
+// 18. WEATHER  (Open-Meteo — no API key)
+// ─────────────────────────────────────────────
+const WMO_ICON = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'❄️', 73:'❄️', 75:'❄️', 77:'❄️',
+  80:'🌦️', 81:'🌦️', 82:'🌧️',
+  85:'🌨️', 86:'🌨️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️',
+};
+const WMO_DESC = {
+  0:'晴天', 1:'大致晴朗', 2:'局部多雲', 3:'陰天',
+  45:'霧', 48:'霧',
+  51:'毛毛雨', 53:'毛毛雨', 55:'毛毛雨',
+  61:'小雨', 63:'中雨', 65:'大雨',
+  71:'小雪', 73:'中雪', 75:'大雪', 77:'雪粒',
+  80:'陣雨', 81:'陣雨', 82:'強陣雨',
+  85:'陣雪', 86:'強陣雪',
+  95:'雷陣雨', 96:'雷陣雨夾冰雹', 99:'雷陣雨夾冰雹',
+};
+
+const WEEK_DAYS_ZH = ['日', '一', '二', '三', '四', '五', '六'];
+
+function wmoIcon(code) {
+  return WMO_ICON[code] || '🌡️';
+}
+
+async function initWeather() {
+  const body = el('weatherBody');
+  if (!body) return;
+
+  if (!navigator.geolocation) {
+    body.innerHTML = '<div class="weather-error"><i class="fas fa-triangle-exclamation"></i> 瀏覽器不支援定位</div>';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+    _err => {
+      body.innerHTML = '<div class="weather-error"><i class="fas fa-triangle-exclamation"></i> 無法取得位置，請允許定位權限</div>';
+    },
+    { timeout: 10000 }
+  );
+}
+
+async function fetchWeather(lat, lon) {
+  const body = el('weatherBody');
+  try {
+    // Reverse-geocode city name
+    const geoRes  = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh-TW`,
+      { headers: { 'Accept-Language': 'zh-TW,zh;q=0.9' } }
+    );
+    const geoJson = await geoRes.json();
+    const city =
+      geoJson.address?.city ||
+      geoJson.address?.town ||
+      geoJson.address?.village ||
+      geoJson.address?.county ||
+      geoJson.address?.state ||
+      '目前城市';
+    const cityEl = el('weatherCity');
+    if (cityEl) cityEl.textContent = city + ' 一週天氣';
+
+    // Fetch 7-day forecast
+    const wRes  = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
+      `&timezone=auto&forecast_days=7`
+    );
+    const wJson = await wRes.json();
+    const { time, weathercode, temperature_2m_max, temperature_2m_min, precipitation_probability_max } = wJson.daily;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const days = time.map((dateStr, i) => {
+      const d     = new Date(dateStr + 'T12:00:00');
+      const isToday = dateStr === todayStr;
+      const name  = isToday ? '今天' : `週${WEEK_DAYS_ZH[d.getDay()]}`;
+      const icon  = wmoIcon(weathercode[i]);
+      const hi    = Math.round(temperature_2m_max[i]);
+      const lo    = Math.round(temperature_2m_min[i]);
+      const rain  = precipitation_probability_max[i];
+      return { name, icon, hi, lo, rain, isToday };
+    });
+
+    body.innerHTML = `<div class="weather-days">${
+      days.map(d => `
+        <div class="weather-day${d.isToday ? ' today' : ''}">
+          <div class="wd-name">${esc(d.name)}</div>
+          <div class="wd-icon">${d.icon}</div>
+          <div class="wd-hi">${d.hi}°</div>
+          <div class="wd-lo">${d.lo}°</div>
+          ${d.rain > 0 ? `<div class="wd-rain">💧${d.rain}%</div>` : ''}
+        </div>`
+      ).join('')
+    }</div>`;
+  } catch (e) {
+    if (body) body.innerHTML = '<div class="weather-error"><i class="fas fa-triangle-exclamation"></i> 天氣資料載入失敗，請稍後再試</div>';
+  }
+}
+
+// ─────────────────────────────────────────────
+// 19. DAILY QUOTE
+// ─────────────────────────────────────────────
+const QUOTES = [
+  { text: '成功是努力、勇氣，以及失敗後一次次重新站起來的結果。', author: '溫斯頓·邱吉爾' },
+  { text: '你的時間有限，所以不要浪費時間活在別人的生命裡。', author: '賈伯斯' },
+  { text: '不要等到完美，開始行動，邊做邊調整。', author: '里德·霍夫曼' },
+  { text: '學而不思則罔，思而不學則殆。', author: '孔子' },
+  { text: '天下難事，必作於易；天下大事，必作於細。', author: '老子' },
+  { text: '路漫漫其修遠兮，吾將上下而求索。', author: '屈原' },
+  { text: '每一個不曾起舞的日子，都是對生命的辜負。', author: '尼采' },
+  { text: '生命不在於活得長久，而在於活得充實。', author: '梭羅' },
+  { text: '你必須成為你希望在這個世界上看到的改變。', author: '甘地' },
+  { text: '人可以被摧毀，但不能被打敗。', author: '海明威' },
+  { text: '在你放棄之前，想想你為什麼堅持到現在。', author: '佚名' },
+  { text: '夢想是翅膀，行動是起飛的跑道。', author: '佚名' },
+  { text: '勇氣並不是沒有恐懼，而是判斷其他事物比恐懼更重要。', author: '安柏羅斯·雷德蒙' },
+  { text: '機會不是等來的，而是創造出來的。', author: '克里斯·格羅塞克' },
+  { text: '堅持做你認為正確的事，即使沒有人看見。', author: '佚名' },
+  { text: '知識是唯一在分享時會增長的資源。', author: '路易斯·艾倫' },
+  { text: '一個人能走多遠，取決於他的夢想有多大。', author: '佚名' },
+  { text: '細節決定成敗，態度決定一切。', author: '汪中求' },
+  { text: '昨日種種，皆成今我。', author: '佚名' },
+  { text: '你不需要看到全部的階梯，只需要踏出第一步。', author: '馬丁·路德·金恩' },
+  { text: '卓越不是行為，而是習慣。', author: '亞里斯多德' },
+  { text: '成大事者，不拘小節，但不忽視細節。', author: '佚名' },
+  { text: '讀萬卷書，行萬里路。', author: '劉彝' },
+  { text: '只有走出舒適圈，才能真正成長。', author: '佚名' },
+  { text: '智慧不是知識的積累，而是對事物本質的洞察。', author: '蘇格拉底' },
+  { text: '設定目標是看不見未來的第一步。', author: '托尼·羅賓斯' },
+  { text: '把每一天都當作學習的機會，你將永不停止成長。', author: '佚名' },
+  { text: '最好的投資，是投資自己。', author: '沃倫·巴菲特' },
+  { text: '生命中最重要的事，不是你在哪裡，而是你往哪裡走。', author: '奧利佛·溫德爾·霍姆斯' },
+  { text: '與其等待完美時機，不如把握現在並讓它成為完美。', author: '佚名' },
+];
+
+let quoteIdx = null;
+
+function initQuote() {
+  const body = el('quoteBody');
+  if (!body) return;
+  // Seed with day-of-year so same quote shows all day, rotates daily
+  const now = new Date();
+  const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  quoteIdx = doy % QUOTES.length;
+  renderQuote();
+
+  el('nextQuoteBtn')?.addEventListener('click', () => {
+    quoteIdx = (quoteIdx + 1) % QUOTES.length;
+    renderQuote();
+  });
+}
+
+function renderQuote() {
+  const body = el('quoteBody');
+  if (!body) return;
+  const q = QUOTES[quoteIdx];
+  body.innerHTML = `
+    <div class="quote-text">${esc(q.text)}</div>
+    <div class="quote-author">— ${esc(q.author)}</div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+// 20. INIT
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Encrypted config: show passphrase modal before anything else
@@ -1019,6 +1186,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   applyOwnerName();
   initClock();
+  initWeather();
+  initQuote();
+  el('refreshWeatherBtn')?.addEventListener('click', () => {
+    const body = el('weatherBody');
+    if (body) body.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 取得位置中…</div>';
+    const cityEl = el('weatherCity');
+    if (cityEl) cityEl.textContent = '一週天氣';
+    initWeather();
+  });
   initCalendar();
   initEnglish();
   initLinks();

@@ -76,6 +76,33 @@
   <!-- ── MAIN GRID ── -->
   <main class="dashboard">
 
+    <!-- ROW 0 : Weather ｜ Quote -->
+    <div class="row row-strip">
+
+      <!-- Weather (demo: mock data) -->
+      <section class="card card-weather">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-cloud-sun"></i> <span id="weatherCity">台北 一週天氣</span></span>
+          <div class="card-actions">
+            <button class="ibtn" id="refreshWeatherBtn" title="重新整理天氣"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="weather-body" id="weatherBody"></div>
+      </section>
+
+      <!-- Daily Quote -->
+      <section class="card card-quote">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-quote-left"></i> 每日格言</span>
+          <div class="card-actions">
+            <button class="ibtn" id="nextQuoteBtn" title="換一則"><i class="fas fa-shuffle"></i></button>
+          </div>
+        </div>
+        <div class="quote-body" id="quoteBody"></div>
+      </section>
+
+    </div><!-- /row-strip -->
+
     <!-- ROW 1 : English ｜ Calendar ｜ Links -->
     <div class="row row-top">
 
@@ -536,6 +563,75 @@ function renderPodcast() {
 }
 
 renderPodcast();
+
+// ─── WEATHER (demo mock) ──────────────────────────────────────────────────────
+
+const MOCK_WEATHER = [
+  { name:'今天', icon:'☀️', hi:28, lo:20, rain:0 },
+  { name:'週二', icon:'⛅', hi:27, lo:19, rain:10 },
+  { name:'週三', icon:'🌧️', hi:24, lo:18, rain:75 },
+  { name:'週四', icon:'🌦️', hi:25, lo:18, rain:40 },
+  { name:'週五', icon:'⛅', hi:26, lo:19, rain:15 },
+  { name:'週六', icon:'☀️', hi:29, lo:21, rain:0 },
+  { name:'週日', icon:'☀️', hi:30, lo:22, rain:0 },
+];
+
+(function renderDemoWeather() {
+  const body = document.getElementById('weatherBody');
+  if (!body) return;
+  const now = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  const todayName = '今天';
+  MOCK_WEATHER.forEach((d, i) => {
+    if (i > 0) {
+      const dt = new Date(now);
+      dt.setDate(dt.getDate() + i);
+      d.name = '週' + days[dt.getDay()];
+    }
+  });
+  body.innerHTML = `<div class="weather-days">${
+    MOCK_WEATHER.map((d,i) => `
+      <div class="weather-day${i===0?' today':''}">
+        <div class="wd-name">${d.name}</div>
+        <div class="wd-icon">${d.icon}</div>
+        <div class="wd-hi">${d.hi}°</div>
+        <div class="wd-lo">${d.lo}°</div>
+        ${d.rain>0 ? `<div class="wd-rain">💧${d.rain}%</div>` : ''}
+      </div>`).join('')
+  }</div>`;
+})();
+
+// ─── QUOTE ────────────────────────────────────────────────────────────────────
+
+const DEMO_QUOTES = [
+  { text: '成功是努力、勇氣，以及失敗後一次次重新站起來的結果。', author: '溫斯頓·邱吉爾' },
+  { text: '你的時間有限，所以不要浪費時間活在別人的生命裡。', author: '賈伯斯' },
+  { text: '不要等到完美，開始行動，邊做邊調整。', author: '里德·霍夫曼' },
+  { text: '學而不思則罔，思而不學則殆。', author: '孔子' },
+  { text: '每一個不曾起舞的日子，都是對生命的辜負。', author: '尼采' },
+  { text: '卓越不是行為，而是習慣。', author: '亞里斯多德' },
+  { text: '最好的投資，是投資自己。', author: '沃倫·巴菲特' },
+  { text: '知識是唯一在分享時會增長的資源。', author: '路易斯·艾倫' },
+  { text: '路漫漫其修遠兮，吾將上下而求索。', author: '屈原' },
+  { text: '你必須成為你希望在這個世界上看到的改變。', author: '甘地' },
+];
+
+(function() {
+  const now = new Date();
+  const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  let idx = doy % DEMO_QUOTES.length;
+
+  function render() {
+    const q = DEMO_QUOTES[idx];
+    const body = document.getElementById('quoteBody');
+    if (body) body.innerHTML = `<div class="quote-text">${q.text}</div><div class="quote-author">— ${q.author}</div>`;
+  }
+  render();
+  document.getElementById('nextQuoteBtn')?.addEventListener('click', () => {
+    idx = (idx + 1) % DEMO_QUOTES.length;
+    render();
+  });
+})();
 
 // ─── WORLD HISTORY ────────────────────────────────────────────────────────────
 

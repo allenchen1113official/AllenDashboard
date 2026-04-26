@@ -47,6 +47,35 @@
   <!-- ── MAIN GRID ── -->
   <main class="dashboard">
 
+    <!-- ROW 0 : Weather ｜ Quote -->
+    <div class="row row-strip">
+
+      <!-- Weather -->
+      <section class="card card-weather">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-cloud-sun"></i> <span id="weatherCity">一週天氣</span></span>
+          <div class="card-actions">
+            <button class="ibtn" id="refreshWeatherBtn" title="重新整理天氣"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="weather-body" id="weatherBody">
+          <div class="loading"><i class="fas fa-spinner fa-spin"></i> 取得位置中…</div>
+        </div>
+      </section>
+
+      <!-- Daily Quote -->
+      <section class="card card-quote">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-quote-left"></i> 每日格言</span>
+          <div class="card-actions">
+            <button class="ibtn" id="nextQuoteBtn" title="換一則"><i class="fas fa-shuffle"></i></button>
+          </div>
+        </div>
+        <div class="quote-body" id="quoteBody"></div>
+      </section>
+
+    </div><!-- /row-strip -->
+
     <!-- ROW 1 : English ｜ Calendar ｜ Links -->
     <div class="row row-top">
 
