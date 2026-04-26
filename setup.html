@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Allen Dashboard — 設定加密工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="crypto.js"></script>
+  <style>
+    :root {
+      --bg:      #0d1117; --card:    #161b22; --elev:   #21262d;
+      --border:  #30363d; --text:    #e6edf3; --muted:  #8b949e;
+      --blue:    #58a6ff; --green:   #3fb950; --red:    #f85149;
+      --purple:  #bc8cff; --yellow:  #d29922;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 24px; font-size: 14px;
+    }
+    .container { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 20px; }
+
+    .page-title {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 20px; font-weight: 700;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .page-title i { -webkit-text-fill-color: var(--blue); font-size: 22px; }
+    .page-sub { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title i { color: var(--blue); }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label  { font-size: 12px; font-weight: 600; color: var(--muted); }
+    input, textarea {
+      width: 100%; padding: 8px 12px;
+      background: var(--elev); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font: inherit; font-size: 13px;
+      transition: border-color .15s;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--blue); }
+    input[type="password"] { letter-spacing: 2px; }
+    textarea { min-height: 70px; resize: vertical; font-family: monospace; font-size: 12px; }
+    .hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    .btn {
+      padding: 10px 22px; border-radius: 8px; font: inherit; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; transition: all .15s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--blue); color: #0d1117; }
+    .btn-primary:hover { background: #79b8ff; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-ghost {
+      background: var(--elev); border: 1px solid var(--border); color: var(--muted);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+
+    .output-block {
+      background: var(--elev); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden; display: none;
+    }
+    .output-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; color: var(--muted);
+    }
+    .output-hd i { color: var(--green); }
+    .copy-btn {
+      font-size: 11px; padding: 4px 10px; border-radius: 5px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer; transition: all .15s;
+    }
+    .copy-btn:hover { color: var(--blue); border-color: var(--blue); }
+    .output-code {
+      padding: 14px; font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 12px; line-height: 1.7; color: var(--text);
+      white-space: pre; overflow-x: auto;
+    }
+    .kw-blue   { color: var(--blue); }
+    .kw-green  { color: var(--green); }
+    .kw-purple { color: var(--purple); }
+    .kw-muted  { color: var(--muted); }
+
+    .alert {
+      padding: 10px 14px; border-radius: 8px; font-size: 12px;
+      display: flex; align-items: center; gap: 8px; display: none;
+    }
+    .alert-err  { background: rgba(248,81,73,.1);  border: 1px solid rgba(248,81,73,.3);  color: var(--red); }
+    .alert-ok   { background: rgba(63,185,80,.1);  border: 1px solid rgba(63,185,80,.3);  color: var(--green); }
+
+    .steps { display: flex; flex-direction: column; gap: 8px; }
+    .step  {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 10px 14px; background: var(--elev); border-radius: 8px;
+      font-size: 12px; line-height: 1.6;
+    }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%; background: var(--blue);
+      color: #0d1117; font-weight: 700; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    code {
+      background: rgba(88,166,255,.12); color: var(--blue);
+      padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div>
+    <div class="page-title"><i class="fas fa-shield-halved"></i> Config 加密工具</div>
+    <div class="page-sub">
+      將 Appwrite 憑證加密後寫入 <code>config.js</code>，避免明文外洩。<br>
+      加密使用瀏覽器內建 <strong>AES-256-GCM + PBKDF2</strong>，私鑰不離開裝置。
+    </div>
+  </div>
+
+  <!-- Step guide -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-list-ol"></i> 使用步驟</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div>填入 Appwrite 各項 ID（從 Appwrite Console 複製）</div></div>
+      <div class="step"><div class="step-num">2</div><div>設定一組「密碼短語」（Dashboard 每次開啟時須輸入）</div></div>
+      <div class="step"><div class="step-num">3</div><div>點選「產生加密設定」，複製輸出內容到 <code>config.js</code></div></div>
+      <div class="step"><div class="step-num">4</div><div>開啟 <code>index.html</code>，輸入相同密碼短語即可解鎖</div></div>
+    </div>
+  </div>
+
+  <!-- Credentials form -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-database"></i> Appwrite 憑證</div>
+
+    <div class="field">
+      <label>Endpoint</label>
+      <input id="endpoint" type="text" value="https://cloud.appwrite.io/v1" />
+    </div>
+    <div class="field">
+      <label>Project ID</label>
+      <input id="projectId" type="text" placeholder="例：abc123def456" />
+    </div>
+    <div class="field">
+      <label>Database ID</label>
+      <input id="dbId" type="text" placeholder="例：allen-dashboard" />
+    </div>
+    <div class="field">
+      <label>Collection ID — dashboard_config</label>
+      <input id="colConfig" type="text" placeholder="例：dashboard_config" />
+    </div>
+    <div class="field">
+      <label>Collection ID — calendar_events</label>
+      <input id="colEvents" type="text" placeholder="例：calendar_events" />
+    </div>
+    <div class="field">
+      <label>Collection ID — personal_history</label>
+      <input id="colHistory" type="text" placeholder="例：personal_history" />
+    </div>
+  </div>
+
+  <!-- Passphrase -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-key"></i> 密碼短語</div>
+    <div class="field">
+      <label>密碼短語（至少 12 字元，含英文大小寫與數字）</label>
+      <input id="passphrase" type="password" placeholder="••••••••••••" />
+      <div class="hint">此密碼短語不會被儲存，每次開啟 Dashboard 時需重新輸入。請妥善保管，遺失後需重新執行此工具產生新的 config.js。</div>
+    </div>
+    <div class="field">
+      <label>確認密碼短語</label>
+      <input id="passphrase2" type="password" placeholder="••••••••••••" />
+    </div>
+
+    <div id="alertErr" class="alert alert-err"><i class="fas fa-circle-exclamation"></i><span id="alertErrMsg"></span></div>
+    <div id="alertOk"  class="alert alert-ok" ><i class="fas fa-circle-check"></i><span>加密成功！請將下方內容複製至 config.js</span></div>
+
+    <button class="btn btn-primary" id="genBtn" onclick="generate()">
+      <i class="fas fa-lock"></i> 產生加密設定
+    </button>
+  </div>
+
+  <!-- Output -->
+  <div class="output-block" id="outputBlock">
+    <div class="output-hd">
+      <span><i class="fas fa-circle-check"></i>&nbsp; 複製以下內容，完整貼入 config.js</span>
+      <button class="copy-btn" onclick="copyOutput()"><i class="fas fa-copy"></i> 複製全部</button>
+    </div>
+    <div class="output-code" id="outputCode"></div>
+  </div>
+
+</div>
+
+<script>
+async function generate() {
+  const btn = document.getElementById('genBtn');
+  const errDiv = document.getElementById('alertErr');
+  const errMsg = document.getElementById('alertErrMsg');
+  const okDiv  = document.getElementById('alertOk');
+  const outBlock = document.getElementById('outputBlock');
+
+  // Hide previous results
+  errDiv.style.display = 'none';
+  okDiv.style.display  = 'none';
+  outBlock.style.display = 'none';
+
+  // Collect values
+  const endpoint   = document.getElementById('endpoint').value.trim();
+  const projectId  = document.getElementById('projectId').value.trim();
+  const dbId       = document.getElementById('dbId').value.trim();
+  const colConfig  = document.getElementById('colConfig').value.trim();
+  const colEvents  = document.getElementById('colEvents').value.trim();
+  const colHistory = document.getElementById('colHistory').value.trim();
+  const pass       = document.getElementById('passphrase').value;
+  const pass2      = document.getElementById('passphrase2').value;
+
+  // Validation
+  const showErr = msg => {
+    errMsg.textContent = msg;
+    errDiv.style.display = 'flex';
+  };
+  if (!projectId || !dbId || !colConfig || !colEvents || !colHistory) {
+    showErr('請填寫所有 Appwrite ID 欄位'); return;
+  }
+  if (pass.length < 12) {
+    showErr('密碼短語至少需要 12 字元'); return;
+  }
+  if (pass !== pass2) {
+    showErr('兩次輸入的密碼短語不相同'); return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加密中…';
+
+  try {
+    // Generate random salt and derive key
+    const salt = await AW_CRYPTO.generateSalt();
+    const key  = await AW_CRYPTO.deriveKey(pass, salt);
+
+    // Encrypt all credentials as a JSON blob
+    const payload = JSON.stringify({ projectId, dbId, colConfig, colEvents, colHistory });
+    const cipher  = await AW_CRYPTO.encrypt(payload, key);
+
+    // Render output
+    const ts = new Date().toISOString().slice(0, 10);
+    const lines = [
+      `// ═══════════════════════════════════════════════════════════`,
+      `//  Allen Dashboard — 加密設定`,
+      `//  產生時間：${ts}`,
+      `//  ⚠️  請勿將此檔案提交至公開 Repository`,
+      `// ═══════════════════════════════════════════════════════════`,
+      ``,
+      `const APPWRITE_ENDPOINT = '${endpoint}';`,
+      ``,
+      `// 加密憑證（由 setup.html 產生）`,
+      `const APPWRITE_SALT   = '${salt}';`,
+      `const APPWRITE_CIPHER = '${cipher}';`,
+    ];
+
+    const code = document.getElementById('outputCode');
+    code.innerHTML = lines.map(l => {
+      if (l.startsWith('//')) return `<span class="kw-muted">${l}</span>`;
+      if (l.includes('APPWRITE_ENDPOINT')) return l.replace(/('.*')/g, '<span class="kw-green">$1</span>').replace(/const /g, '<span class="kw-blue">const </span>');
+      if (l.includes('APPWRITE_SALT') || l.includes('APPWRITE_CIPHER'))
+        return l.replace(/('.*')/g, '<span class="kw-purple">$1</span>').replace(/const /g, '<span class="kw-blue">const </span>');
+      return l;
+    }).join('\n');
+
+    outBlock.style.display = 'block';
+    okDiv.style.display    = 'flex';
+    outBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    showErr('加密失敗：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-lock"></i> 產生加密設定';
+  }
+}
+
+function copyOutput() {
+  const lines = document.getElementById('outputCode').innerText;
+  navigator.clipboard.writeText(lines).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.innerHTML = '<i class="fas fa-check"></i> 已複製';
+    setTimeout(() => btn.innerHTML = '<i class="fas fa-copy"></i> 複製全部', 2000);
+  });
+}
+</script>
+</body>
+</html>

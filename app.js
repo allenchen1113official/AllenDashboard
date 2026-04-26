@@ -98,75 +98,138 @@ let S = {
 };
 
 // ─────────────────────────────────────────────
-// 4. APPWRITE LAYER
+// 4. APPWRITE LAYER  (AES-256-GCM encrypted)
 // ─────────────────────────────────────────────
-let awDb = null;
-const configDocIds = {}; // cache: key → Appwrite $id
+let awDb       = null;
+let sessionKey = null; // CryptoKey — in-memory only, never persisted
+
+// Resolved credentials — populated by initAppwriteConfig()
+// from either encrypted APPWRITE_CIPHER or plain APPWRITE_PROJECT_ID
+let AW_PROJECT_ID  = '';
+let AW_DB_ID       = '';
+let AW_COL_CONFIG  = '';
+let AW_COL_EVENTS  = '';
+let AW_COL_HISTORY = '';
+
+const configDocIds = {}; // cache: config key → Appwrite $id
+
+// ── Credential resolution ────────────────────
+async function initAppwriteConfig() {
+  // Encrypted mode: APPWRITE_SALT + APPWRITE_CIPHER in config.js
+  if (typeof APPWRITE_CIPHER !== 'undefined' &&
+      typeof APPWRITE_SALT   !== 'undefined' && sessionKey) {
+    try {
+      const json = await AW_CRYPTO.decrypt(APPWRITE_CIPHER, sessionKey);
+      const cfg  = JSON.parse(json);
+      AW_PROJECT_ID  = cfg.projectId;
+      AW_DB_ID       = cfg.dbId;
+      AW_COL_CONFIG  = cfg.colConfig;
+      AW_COL_EVENTS  = cfg.colEvents;
+      AW_COL_HISTORY = cfg.colHistory;
+      return true;
+    } catch (e) { console.error('Config decryption failed:', e); return false; }
+  }
+  // Plain mode: backward-compatible with unencrypted config.js
+  if (typeof APPWRITE_PROJECT_ID !== 'undefined' &&
+      !APPWRITE_PROJECT_ID.includes('YOUR_') &&
+      typeof APPWRITE_DB_ID !== 'undefined' &&
+      !APPWRITE_DB_ID.includes('YOUR_')) {
+    AW_PROJECT_ID  = APPWRITE_PROJECT_ID;
+    AW_DB_ID       = APPWRITE_DB_ID;
+    AW_COL_CONFIG  = APPWRITE_COL_CONFIG;
+    AW_COL_EVENTS  = APPWRITE_COL_EVENTS;
+    AW_COL_HISTORY = APPWRITE_COL_HISTORY;
+    return true;
+  }
+  return false;
+}
 
 async function initAppwrite() {
   try {
     if (typeof window.Appwrite === 'undefined') return false;
-    if (!APPWRITE_PROJECT_ID || APPWRITE_PROJECT_ID.includes('YOUR_') ||
-        !APPWRITE_DB_ID      || APPWRITE_DB_ID.includes('YOUR_'))      return false;
+    if (!await initAppwriteConfig()) return false;
     const { Client, Databases } = window.Appwrite;
-    const client = new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID);
+    const client = new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(AW_PROJECT_ID);
     awDb = new Databases(client);
-    // Connection test
-    await awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_CONFIG, []);
+    await awDb.listDocuments(AW_DB_ID, AW_COL_CONFIG, []);
     return true;
   } catch (_) { awDb = null; return false; }
 }
 
+// ── Transparent encrypt / decrypt ────────────
+// maybeEncrypt/maybeDecrypt are no-ops when sessionKey is null (plain mode).
+// maybeDecrypt falls back to the raw value so legacy unencrypted records
+// continue to work after encryption is enabled.
+async function maybeEncrypt(text) {
+  if (!sessionKey || text == null) return text ?? '';
+  return AW_CRYPTO.encrypt(String(text), sessionKey);
+}
+async function maybeDecrypt(text) {
+  if (!sessionKey || !text) return text || '';
+  try { return await AW_CRYPTO.decrypt(text, sessionKey); }
+  catch (_) { return text; }
+}
+
+// ── Load ─────────────────────────────────────
 async function loadFromDB() {
   if (!awDb) return;
   try {
     const { Query } = window.Appwrite;
     const now = new Date();
     const [r1, r2, r3] = await Promise.all([
-      awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_EVENTS,
+      awDb.listDocuments(AW_DB_ID, AW_COL_EVENTS,
         [Query.orderAsc('date'), Query.limit(200)]),
-      awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_CONFIG,
+      awDb.listDocuments(AW_DB_ID, AW_COL_CONFIG,
         [Query.limit(20)]),
-      awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_HISTORY,
+      awDb.listDocuments(AW_DB_ID, AW_COL_HISTORY,
         [Query.equal('month', now.getMonth() + 1), Query.equal('day', now.getDate()),
          Query.orderAsc('year'), Query.limit(200)]),
     ]);
-    // Calendar events: Appwrite $id → our id
-    S.events = r1.documents.map(d => ({
-      id: d.$id, title: d.title, date: d.date,
-      time: d.time || '', note: d.note || '', color: d.color || '#58a6ff',
-    }));
-    // Config: values stored as JSON strings
+
+    S.events = await Promise.all(r1.documents.map(async d => ({
+      id:    d.$id,
+      title: await maybeDecrypt(d.title),
+      date:  d.date,
+      time:  d.time  || '',
+      note:  await maybeDecrypt(d.note || ''),
+      color: d.color || '#58a6ff',
+    })));
+
     const OK = new Set(['word_idx','links','keywords','feeds','podcasts','word_notes']);
-    r2.documents.forEach(d => {
+    for (const d of r2.documents) {
       configDocIds[d.key] = d.$id;
-      if (OK.has(d.key)) { try { S[d.key] = JSON.parse(d.value); } catch (_) {} }
-    });
-    // Personal history
-    S.personalHistory = r3.documents.map(d => ({
-      id: d.$id, title: d.title, description: d.description || '',
+      if (OK.has(d.key)) {
+        try { S[d.key] = JSON.parse(await maybeDecrypt(d.value)); } catch (_) {}
+      }
+    }
+
+    S.personalHistory = await Promise.all(r3.documents.map(async d => ({
+      id:          d.$id,
+      title:       await maybeDecrypt(d.title),
+      description: await maybeDecrypt(d.description || ''),
       year: d.year, month: d.month, day: d.day,
-    }));
+    })));
   } catch (e) { console.error('loadFromDB:', e); }
 }
 
+// ── Sync helpers ─────────────────────────────
 function syncConfig(key) {
   if (!awDb) { saveLocal(); return; }
   _syncConfigAsync(key).catch(e => { console.error('syncConfig', key, e); saveLocal(); });
 }
 async function _syncConfigAsync(key) {
   const { ID, Query } = window.Appwrite;
-  const valueStr = JSON.stringify(S[key]);
+  const valueStr = await maybeEncrypt(JSON.stringify(S[key]));
   if (configDocIds[key]) {
-    await awDb.updateDocument(APPWRITE_DB_ID, APPWRITE_COL_CONFIG, configDocIds[key], { value: valueStr });
+    await awDb.updateDocument(AW_DB_ID, AW_COL_CONFIG, configDocIds[key], { value: valueStr });
   } else {
-    const res = await awDb.listDocuments(APPWRITE_DB_ID, APPWRITE_COL_CONFIG,
+    const res = await awDb.listDocuments(AW_DB_ID, AW_COL_CONFIG,
       [Query.equal('key', key), Query.limit(1)]);
     if (res.documents.length > 0) {
       configDocIds[key] = res.documents[0].$id;
-      await awDb.updateDocument(APPWRITE_DB_ID, APPWRITE_COL_CONFIG, configDocIds[key], { value: valueStr });
+      await awDb.updateDocument(AW_DB_ID, AW_COL_CONFIG, configDocIds[key], { value: valueStr });
     } else {
-      const doc = await awDb.createDocument(APPWRITE_DB_ID, APPWRITE_COL_CONFIG,
+      const doc = await awDb.createDocument(AW_DB_ID, AW_COL_CONFIG,
         ID.unique(), { key, value: valueStr });
       configDocIds[key] = doc.$id;
     }
@@ -175,36 +238,52 @@ async function _syncConfigAsync(key) {
 
 function syncEvent(evt) {
   if (!awDb) { saveLocal(); return; }
-  _syncDocAsync(APPWRITE_COL_EVENTS, evt.id, { title: evt.title, date: evt.date, time: evt.time, note: evt.note, color: evt.color })
-    .catch(e => console.error('syncEvent', e));
+  _syncEventAsync(evt).catch(e => console.error('syncEvent', e));
 }
+async function _syncEventAsync(evt) {
+  await _syncDocAsync(AW_COL_EVENTS, evt.id, {
+    title: await maybeEncrypt(evt.title),
+    date:  evt.date,
+    time:  evt.time,
+    note:  await maybeEncrypt(evt.note || ''),
+    color: evt.color,
+  });
+}
+
 function deleteEventDB(id) {
   if (!awDb) { saveLocal(); return; }
-  awDb.deleteDocument(APPWRITE_DB_ID, APPWRITE_COL_EVENTS, id)
+  awDb.deleteDocument(AW_DB_ID, AW_COL_EVENTS, id)
     .catch(e => console.error('deleteEventDB', e));
 }
+
 function syncPH(item) {
   if (!awDb) return;
-  _syncDocAsync(APPWRITE_COL_HISTORY, item.id,
-    { title: item.title, description: item.description, year: item.year, month: item.month, day: item.day })
-    .catch(e => console.error('syncPH', e));
+  _syncPHAsync(item).catch(e => console.error('syncPH', e));
 }
+async function _syncPHAsync(item) {
+  await _syncDocAsync(AW_COL_HISTORY, item.id, {
+    title:       await maybeEncrypt(item.title),
+    description: await maybeEncrypt(item.description || ''),
+    year: item.year, month: item.month, day: item.day,
+  });
+}
+
 function deletePHDB(id) {
   if (!awDb) return;
-  awDb.deleteDocument(APPWRITE_DB_ID, APPWRITE_COL_HISTORY, id)
+  awDb.deleteDocument(AW_DB_ID, AW_COL_HISTORY, id)
     .catch(e => console.error('deletePHDB', e));
 }
-// Shared upsert helper: try update → fallback create
+
 async function _syncDocAsync(colId, docId, data) {
   try {
-    await awDb.updateDocument(APPWRITE_DB_ID, colId, docId, data);
+    await awDb.updateDocument(AW_DB_ID, colId, docId, data);
   } catch (e) {
-    if (e.code === 404) {
-      await awDb.createDocument(APPWRITE_DB_ID, colId, docId, data);
-    } else throw e;
+    if (e.code === 404) await awDb.createDocument(AW_DB_ID, colId, docId, data);
+    else throw e;
   }
 }
 
+// ── Status badge ─────────────────────────────
 function setDBStatus(status) {
   const badge = document.getElementById('dbBadge');
   const label = document.getElementById('dbLabel');
@@ -212,7 +291,7 @@ function setDBStatus(status) {
   badge.className = `db-badge db-${status}`;
   label.textContent = status === 'connected' ? 'Appwrite ✓'
                     : status === 'pending'   ? '連線中…' : '未連線';
-  badge.title = status === 'connected' ? '已連接 Appwrite 資料庫'
+  badge.title = status === 'connected' ? '已連接 Appwrite（端對端加密）'
               : status === 'pending'   ? '正在連接資料庫…'
               : '尚未設定 Appwrite（資料暫存於瀏覽器）';
 }
@@ -765,9 +844,52 @@ function setupModals() {
 }
 
 // ─────────────────────────────────────────────
-// 16. INIT
+// 16. PASSPHRASE UNLOCK
+// ─────────────────────────────────────────────
+function requestPassphrase() {
+  return new Promise(resolve => {
+    const backdrop = document.getElementById('passphraseBackdrop');
+    const input    = document.getElementById('passphraseInput');
+    const btn      = document.getElementById('passphraseUnlockBtn');
+    const errEl    = document.getElementById('passphraseErr');
+    if (backdrop) backdrop.style.display = 'flex';
+
+    async function attempt() {
+      const pass = input ? input.value : '';
+      if (!pass) { if (errEl) errEl.textContent = '請輸入密碼短語'; return; }
+      if (errEl) errEl.textContent = '驗證中…';
+      if (btn) btn.disabled = true;
+      try {
+        const key = await AW_CRYPTO.deriveKey(pass, APPWRITE_SALT);
+        // Verify passphrase by attempting to decrypt the config cipher
+        await AW_CRYPTO.decrypt(APPWRITE_CIPHER, key);
+        if (backdrop) backdrop.style.display = 'none';
+        resolve(key);
+      } catch (_) {
+        if (errEl) errEl.textContent = '密碼短語錯誤，請重試';
+        if (input) input.value = '';
+        if (btn) btn.disabled = false;
+        if (input) input.focus();
+      }
+    }
+
+    if (btn)   btn.addEventListener('click', attempt);
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') attempt(); });
+    if (input) input.focus();
+  });
+}
+
+// ─────────────────────────────────────────────
+// 17. INIT
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Encrypted config: show passphrase modal before anything else
+  if (typeof APPWRITE_CIPHER !== 'undefined' &&
+      typeof APPWRITE_SALT   !== 'undefined' &&
+      typeof AW_CRYPTO       !== 'undefined') {
+    sessionKey = await requestPassphrase();
+  }
+
   setDBStatus('pending');
   const ready = await initAppwrite();
   if (ready) {
