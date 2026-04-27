@@ -1,60 +1,15 @@
 'use strict';
+// vocab.js must be loaded before app.js (defines VOCAB_DEFAULT)
 
 // ─────────────────────────────────────────────
-// 1. VOCABULARY
+// 1. VOCABULARY  (uses VOCAB_DEFAULT from vocab.js; admin can override via localStorage)
 // ─────────────────────────────────────────────
-const VOCAB = [
-  { word:'serendipity',  phonetic:'/ˌserənˈdɪpɪti/',  pos:'noun',      definition:'The occurrence of finding pleasant things by chance.',                        example:'It was pure serendipity that led me to my dream job.' },
-  { word:'ephemeral',    phonetic:'/ɪˈfemərəl/',       pos:'adjective', definition:'Lasting for a very short time; transitory.',                                 example:'The ephemeral beauty of cherry blossoms makes them precious.' },
-  { word:'resilience',   phonetic:'/rɪˈzɪliəns/',      pos:'noun',      definition:'The capacity to recover quickly from difficulties.',                         example:'Her resilience in the face of adversity was truly inspiring.' },
-  { word:'eloquent',     phonetic:'/ˈeləkwənt/',       pos:'adjective', definition:'Fluent or persuasive in speaking or writing.',                               example:'He gave an eloquent speech that moved the entire audience.' },
-  { word:'tenacious',    phonetic:'/tɪˈneɪʃəs/',       pos:'adjective', definition:'Tending to keep a firm hold; persistent.',                                   example:'She was tenacious in pursuing her goals despite obstacles.' },
-  { word:'meticulous',   phonetic:'/mɪˈtɪkjʊləs/',    pos:'adjective', definition:'Showing great attention to detail; very careful.',                           example:'His meticulous notes made revision much easier.' },
-  { word:'ubiquitous',   phonetic:'/juːˈbɪkwɪtəs/',   pos:'adjective', definition:'Present, appearing, or found everywhere.',                                   example:'Smartphones have become ubiquitous in modern life.' },
-  { word:'paradigm',     phonetic:'/ˈpærədaɪm/',       pos:'noun',      definition:'A typical example or pattern of something; a model.',                       example:'The internet created a new paradigm for communication.' },
-  { word:'integrity',    phonetic:'/ɪnˈtegrɪti/',      pos:'noun',      definition:'The quality of being honest and having strong moral principles.',            example:'Her integrity was never questioned throughout her career.' },
-  { word:'perseverance', phonetic:'/ˌpɜːsɪˈvɪərəns/', pos:'noun',      definition:'Continued effort despite difficulty or delay in achieving success.',         example:'Perseverance is the key to mastering any skill.' },
-  { word:'innovation',   phonetic:'/ˌɪnəˈveɪʃən/',    pos:'noun',      definition:'The action of introducing new ideas, methods, or products.',                 example:'Innovation drives growth in the technology sector.' },
-  { word:'articulate',   phonetic:'/ɑːˈtɪkjʊlɪt/',    pos:'adjective', definition:'Having or showing the ability to speak fluently and coherently.',            example:'An articulate speaker can simplify complex topics effortlessly.' },
-  { word:'pragmatic',    phonetic:'/præɡˈmætɪk/',      pos:'adjective', definition:'Dealing with things sensibly and realistically.',                            example:'A pragmatic approach helped the team solve the problem quickly.' },
-  { word:'diligent',     phonetic:'/ˈdɪlɪdʒənt/',      pos:'adjective', definition:'Having or showing care and conscientiousness in work.',                      example:'Diligent students consistently outperform their peers.' },
-  { word:'empathy',      phonetic:'/ˈempəθi/',          pos:'noun',      definition:'The ability to understand and share the feelings of another.',              example:'Good leaders show empathy toward their team members.' },
-  { word:'versatile',    phonetic:'/ˈvɜːsətaɪl/',      pos:'adjective', definition:'Able to adapt or be adapted to many different functions.',                   example:'A versatile programmer can work across multiple languages.' },
-  { word:'profound',     phonetic:'/prəˈfaʊnd/',        pos:'adjective', definition:'Very great or intense; having deep insight.',                               example:'Reading that book had a profound effect on my perspective.' },
-  { word:'authentic',    phonetic:'/ɔːˈθentɪk/',        pos:'adjective', definition:'Of undisputed origin; genuine.',                                            example:'Being authentic builds deeper connections with others.' },
-  { word:'ambitious',    phonetic:'/æmˈbɪʃəs/',         pos:'adjective', definition:'Having a strong desire for success or achievement.',                        example:'She was ambitious enough to start her own company at 25.' },
-  { word:'conscientious',phonetic:'/ˌkɒnʃɪˈenʃəs/',   pos:'adjective', definition:'Wishing to do what is right, especially to do one\'s work well.',          example:'A conscientious employee always double-checks their work.' },
-  { word:'perceptive',   phonetic:'/pəˈseptɪv/',        pos:'adjective', definition:'Having or showing sensitive insight.',                                       example:'Her perceptive questions impressed the whole panel.' },
-  { word:'fortitude',    phonetic:'/ˈfɔːtɪtjuːd/',     pos:'noun',      definition:'Courage in pain or adversity.',                                              example:'He faced the hardship with remarkable fortitude.' },
-  { word:'magnanimous',  phonetic:'/mæɡˈnænɪməs/',     pos:'adjective', definition:'Generous or forgiving, especially toward a rival.',                         example:'The winner was magnanimous in victory.' },
-  { word:'sagacious',    phonetic:'/səˈɡeɪʃəs/',        pos:'adjective', definition:'Having or showing keen mental discernment and good judgement.',             example:'A sagacious investor avoids emotional decisions.' },
-  { word:'zealous',      phonetic:'/ˈzeləs/',            pos:'adjective', definition:'Having or showing great energy or enthusiasm in pursuit of a cause.',      example:'She was zealous in her efforts to protect the environment.' },
-  { word:'benevolent',   phonetic:'/bɪˈnevələnt/',      pos:'adjective', definition:'Well-meaning and kindly.',                                                   example:'The benevolent donor funded dozens of scholarships.' },
-  { word:'cogent',       phonetic:'/ˈkəʊdʒənt/',        pos:'adjective', definition:'Clear, logical, and convincing.',                                            example:'She presented a cogent argument that won everyone over.' },
-  { word:'discerning',   phonetic:'/dɪˈsɜːnɪŋ/',        pos:'adjective', definition:'Having or showing good judgement.',                                          example:'A discerning reader notices subtle details.' },
-  { word:'elucidate',    phonetic:'/ɪˈluːsɪdeɪt/',      pos:'verb',      definition:'Make something clear; explain.',                                             example:'The professor elucidated the theory with simple examples.' },
-  { word:'formidable',   phonetic:'/ˈfɔːmɪdəbəl/',     pos:'adjective', definition:'Inspiring fear or respect through being impressively large or capable.',    example:'The team faced a formidable opponent in the finals.' },
-  { word:'gregarious',   phonetic:'/ɡrɪˈɡeəriəs/',     pos:'adjective', definition:'Fond of company; sociable.',                                                 example:'Her gregarious personality made her popular at parties.' },
-  { word:'heuristic',    phonetic:'/hjʊˈrɪstɪk/',       pos:'adjective', definition:'Enabling a person to discover or learn something for themselves.',          example:'Heuristic teaching methods encourage independent thinking.' },
-  { word:'insightful',   phonetic:'/ˈɪnsaɪtfʊl/',       pos:'adjective', definition:'Having or showing an accurate and deep understanding.',                     example:'Her insightful feedback helped the team improve rapidly.' },
-  { word:'judicious',    phonetic:'/dʒuːˈdɪʃəs/',       pos:'adjective', definition:'Having, showing, or done with good judgement or sense.',                   example:'A judicious choice of words can prevent misunderstandings.' },
-  { word:'loquacious',   phonetic:'/ləˈkweɪʃəs/',       pos:'adjective', definition:'Tending to talk a great deal; talkative.',                                  example:'The loquacious host kept the audience entertained all evening.' },
-  { word:'nuanced',      phonetic:'/ˈnjuːɑːnst/',        pos:'adjective', definition:'Characterized by subtle shades of meaning or expression.',                 example:'A nuanced understanding of culture is essential for diplomacy.' },
-  { word:'pivotal',      phonetic:'/ˈpɪvətəl/',          pos:'adjective', definition:'Of crucial importance in relation to the development of something.',       example:'That meeting proved pivotal in securing the deal.' },
-  { word:'quintessential',phonetic:'/ˌkwɪntɪˈsenʃəl/', pos:'adjective', definition:'Representing the most perfect or typical example of something.',            example:'Jazz is the quintessential American art form.' },
-  { word:'succinct',     phonetic:'/səkˈsɪŋkt/',         pos:'adjective', definition:'Briefly and clearly expressed.',                                            example:'A succinct summary saves everyone valuable time.' },
-  { word:'tactful',      phonetic:'/ˈtæktfʊl/',          pos:'adjective', definition:'Having or showing skill and sensitivity in dealing with others.',           example:'A tactful response can defuse a tense situation.' },
-  { word:'vigilant',     phonetic:'/ˈvɪdʒɪlənt/',        pos:'adjective', definition:'Keeping careful watch for possible danger or difficulties.',               example:'Vigilant monitoring prevented a major security breach.' },
-  { word:'vivacious',    phonetic:'/vɪˈveɪʃəs/',         pos:'adjective', definition:'Attractively lively and animated.',                                         example:'Her vivacious energy lit up every room she entered.' },
-  { word:'acumen',       phonetic:'/ˈækjʊmɪn/',          pos:'noun',      definition:'The ability to make good judgements and take quick decisions.',             example:'His business acumen built a company worth millions.' },
-  { word:'brevity',      phonetic:'/ˈbrevɪti/',           pos:'noun',      definition:'Concise and exact use of words; shortness of time.',                       example:'Brevity is the soul of wit.' },
-  { word:'candor',       phonetic:'/ˈkændə/',             pos:'noun',      definition:'The quality of being open and honest in expression.',                      example:'She appreciated his candor even when the feedback was hard.' },
-  { word:'dexterity',    phonetic:'/dekˈsterɪti/',        pos:'noun',      definition:'Skill in performing tasks, especially with the hands.',                    example:'The surgeon\'s dexterity was evident throughout the operation.' },
-  { word:'equanimity',   phonetic:'/ˌekwəˈnɪmɪti/',     pos:'noun',      definition:'Mental calmness and composure in difficult situations.',                    example:'She handled the crisis with remarkable equanimity.' },
-  { word:'fervent',      phonetic:'/ˈfɜːvənt/',           pos:'adjective', definition:'Having or displaying a passionate intensity.',                             example:'He was a fervent advocate for renewable energy.' },
-  { word:'galvanize',    phonetic:'/ˈɡælvənaɪz/',        pos:'verb',      definition:'Shock or excite someone into taking action.',                               example:'The tragedy galvanized the community into demanding change.' },
-  { word:'harbinger',    phonetic:'/ˈhɑːbɪndʒə/',        pos:'noun',      definition:'A person or thing that announces the approach of something.',              example:'The first cherry blossoms are a harbinger of spring.' },
-];
+const VOCAB = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem('allen_vocab'));
+    return Array.isArray(v) && v.length ? v : VOCAB_DEFAULT;
+  } catch (_) { return VOCAB_DEFAULT; }
+})();
 
 // ─────────────────────────────────────────────
 // 2. DEFAULT DATA

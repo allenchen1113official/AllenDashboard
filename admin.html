@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>後台管理 — Allen's Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg:     #0d1117; --card:   #161b22; --elev:  #21262d;
+      --border: #30363d; --text:   #e6edf3; --muted: #8b949e;
+      --blue:   #58a6ff; --green:  #3fb950; --red:   #f85149;
+      --purple: #bc8cff; --yellow: #d29922; --orange:#f0883e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Shell ── */
+    #admin-app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Header ── */
+    .adm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: var(--card); border-bottom: 1px solid var(--border);
+      flex-shrink: 0; gap: 16px; position: sticky; top: 0; z-index: 100;
+    }
+    .adm-brand { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .adm-brand i { -webkit-text-fill-color: var(--blue); }
+    .adm-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 600;
+      background: var(--elev); border: 1px solid var(--border); color: var(--muted);
+      transition: all .15s;
+    }
+    .adm-back:hover { color: var(--text); border-color: var(--blue); }
+    #syncStatus { font-size: 11px; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid var(--border); color: var(--muted); }
+    #syncStatus.ok  { background: rgba(63,185,80,.1); border-color: rgba(63,185,80,.3); color: var(--green); }
+    #syncStatus.err { background: rgba(248,81,73,.1); border-color: rgba(248,81,73,.3); color: var(--red); }
+
+    /* ── Tab Nav ── */
+    .adm-tabs {
+      display: flex; gap: 2px; padding: 12px 24px 0;
+      background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 8px 18px; border-radius: 8px 8px 0 0; font-size: 13px; font-weight: 500;
+      color: var(--muted); background: none; border: 1px solid transparent;
+      border-bottom: none; transition: all .15s; display: flex; align-items: center; gap: 7px;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--elev); }
+    .tab-btn.active {
+      color: var(--blue); background: var(--bg);
+      border-color: var(--border); border-bottom-color: var(--bg);
+      margin-bottom: -1px;
+    }
+    .tab-btn i { font-size: 13px; }
+
+    /* ── Main ── */
+    .adm-main { flex: 1; padding: 24px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .tab-panel { display: none; flex-direction: column; gap: 20px; }
+    .tab-panel.active { display: flex; }
+
+    /* ── Section toolbar ── */
+    .sec-toolbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .sec-count { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 16px; border-radius: 8px; font: inherit; font-size: 13px;
+      font-weight: 600; cursor: pointer; border: none; transition: all .15s;
+    }
+    .btn-primary { background: var(--blue); color: #0d1117; }
+    .btn-primary:hover { background: #79b8ff; }
+    .btn-ghost { background: var(--elev); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+    .btn-danger { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: var(--red); }
+    .btn-danger:hover { background: rgba(248,81,73,.18); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+    .ibtn { padding: 5px 8px; border-radius: 6px; background: none; color: var(--muted); transition: all .15s; }
+    .ibtn:hover { color: var(--text); background: var(--elev); }
+    .ibtn.danger:hover { color: var(--red); }
+
+    /* ── Search input ── */
+    .search-box {
+      padding: 7px 12px; border-radius: 8px; font: inherit; font-size: 13px;
+      background: var(--elev); border: 1px solid var(--border); color: var(--text);
+      width: 220px; transition: border-color .15s;
+    }
+    .search-box:focus { outline: none; border-color: var(--blue); }
+
+    /* ── Table ── */
+    .adm-table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    table.adm-table { width: 100%; border-collapse: collapse; }
+    .adm-table thead tr { background: var(--elev); }
+    .adm-table th {
+      padding: 9px 14px; text-align: left; font-size: 11px; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .4px;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .adm-table td {
+      padding: 9px 14px; border-bottom: 1px solid var(--border);
+      font-size: 13px; vertical-align: middle;
+    }
+    .adm-table tbody tr:last-child td { border-bottom: none; }
+    .adm-table tbody tr:hover td { background: rgba(255,255,255,.02); }
+    .adm-table .cell-truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .adm-table .cell-url { font-size: 12px; color: var(--muted); }
+    .adm-table .cell-actions { display: flex; gap: 4px; }
+    .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+    /* ── Category chip ── */
+    .cat-chip {
+      font-size: 11px; padding: 2px 8px; border-radius: 20px;
+      background: rgba(88,166,255,.1); border: 1px solid rgba(88,166,255,.2);
+      color: var(--blue); font-weight: 500;
+    }
+
+    /* ── Keyword chips ── */
+    .kw-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .kw-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      background: rgba(63,185,80,.1); border: 1px solid rgba(63,185,80,.25); color: var(--green);
+    }
+    .kw-chip button { color: var(--muted); padding: 0; line-height: 1; font-size: 11px; }
+    .kw-chip button:hover { color: var(--red); }
+
+    /* ── Row input ── */
+    .row-input { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .finput {
+      padding: 8px 12px; border-radius: 8px; font: inherit; font-size: 13px;
+      background: var(--elev); border: 1px solid var(--border); color: var(--text);
+      transition: border-color .15s; flex: 1; min-width: 140px;
+    }
+    .finput:focus { outline: none; border-color: var(--blue); }
+    .fselect {
+      padding: 8px 12px; border-radius: 8px; font: inherit; font-size: 13px;
+      background: var(--elev); border: 1px solid var(--border); color: var(--text);
+    }
+    .ftextarea {
+      padding: 8px 12px; border-radius: 8px; font: inherit; font-size: 13px;
+      background: var(--elev); border: 1px solid var(--border); color: var(--text);
+      resize: vertical; min-height: 70px; width: 100%;
+    }
+    .ftextarea:focus { outline: none; border-color: var(--blue); }
+    .flabel { font-size: 12px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; }
+
+    /* ── Subsection ── */
+    .subsection { display: flex; flex-direction: column; gap: 14px; }
+    .subsec-title {
+      font-size: 13px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .subsec-title i { color: var(--blue); }
+    .divider { height: 1px; background: var(--border); }
+
+    /* ── Empty state ── */
+    .empty-state { padding: 32px; text-align: center; color: var(--muted); font-size: 13px; }
+    .empty-state i { font-size: 28px; margin-bottom: 10px; display: block; opacity: .4; }
+
+    /* ── Modal ── */
+    .backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      backdrop-filter: blur(4px); z-index: 1000;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      width: 100%; max-width: 520px; overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,.5);
+    }
+    .modal-wide { max-width: 640px; }
+    .modal-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .modal-hd h3 { font-size: 15px; font-weight: 700; }
+    .modal-bd { padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto; }
+    .modal-ft {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 14px 20px; border-top: 1px solid var(--border); background: var(--elev);
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 20px; font-size: 13px; font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4); z-index: 9999;
+      opacity: 0; transition: all .25s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.ok  { border-color: rgba(63,185,80,.4);  color: var(--green); }
+    #toast.err { border-color: rgba(248,81,73,.4);  color: var(--red); }
+
+    /* ── Vocab pos badge ── */
+    .pos-badge {
+      font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600;
+      background: rgba(188,140,255,.1); border: 1px solid rgba(188,140,255,.25); color: var(--purple);
+    }
+
+    /* ── Passphrase overlay ── */
+    #ppBackdrop {
+      display: none; position: fixed; inset: 0; background: rgba(13,17,23,.96);
+      backdrop-filter: blur(8px); z-index: 2000; align-items: center; justify-content: center; padding: 20px;
+    }
+  </style>
+</head>
+<body>
+<div id="admin-app">
+
+  <!-- Header -->
+  <header class="adm-header">
+    <div class="adm-brand"><i class="fas fa-sliders"></i> 後台管理</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="syncStatus">localStorage</span>
+      <a href="index.html" class="adm-back"><i class="fas fa-arrow-left"></i> 返回 Dashboard</a>
+    </div>
+  </header>
+
+  <!-- Tab nav -->
+  <nav class="adm-tabs">
+    <button class="tab-btn active" data-tab="links"><i class="fas fa-bookmark"></i> 常用連結</button>
+    <button class="tab-btn" data-tab="calendar"><i class="fas fa-calendar-alt"></i> 行事曆</button>
+    <button class="tab-btn" data-tab="news"><i class="fas fa-newspaper"></i> 新聞訂閱</button>
+    <button class="tab-btn" data-tab="podcast"><i class="fas fa-headphones"></i> Podcast</button>
+    <button class="tab-btn" data-tab="vocab"><i class="fas fa-graduation-cap"></i> 英文學習</button>
+  </nav>
+
+  <main class="adm-main">
+
+    <!-- ── TAB: 常用連結 ── -->
+    <div class="tab-panel active" id="panel-links">
+      <div class="sec-toolbar">
+        <button class="btn btn-primary" onclick="openLinkModal()"><i class="fas fa-plus"></i> 新增連結</button>
+        <input class="search-box" id="linkSearch" placeholder="搜尋名稱 / 分類…" oninput="renderLinks()">
+        <span class="sec-count" id="linksCount"></span>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr>
+            <th>圖示</th><th>名稱</th><th>分類</th><th>URL</th><th style="width:90px">操作</th>
+          </tr></thead>
+          <tbody id="linksBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TAB: 行事曆 ── -->
+    <div class="tab-panel" id="panel-calendar">
+      <div class="sec-toolbar">
+        <button class="btn btn-primary" onclick="openEventModal()"><i class="fas fa-plus"></i> 新增事件</button>
+        <input class="search-box" id="evtSearch" placeholder="搜尋標題…" oninput="renderEvents()">
+        <span class="sec-count" id="eventsCount"></span>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr>
+            <th></th><th>標題</th><th>日期</th><th>時間</th><th>備註</th><th style="width:90px">操作</th>
+          </tr></thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TAB: 新聞訂閱 ── -->
+    <div class="tab-panel" id="panel-news">
+      <!-- Keywords -->
+      <div class="subsection">
+        <div class="subsec-title"><i class="fas fa-tags"></i> 關鍵字訂閱</div>
+        <div class="row-input">
+          <input class="finput" id="kwInput" placeholder="輸入關鍵字後按 Enter 或點新增" style="max-width:280px"
+            onkeydown="if(event.key==='Enter')addKeyword()">
+          <button class="btn btn-primary btn-sm" onclick="addKeyword()"><i class="fas fa-plus"></i> 新增</button>
+        </div>
+        <div class="kw-chips" id="kwChips"></div>
+      </div>
+      <div class="divider"></div>
+      <!-- RSS Feeds -->
+      <div class="subsection">
+        <div class="subsec-title"><i class="fas fa-rss"></i> RSS 訂閱來源</div>
+        <button class="btn btn-primary" style="align-self:flex-start" onclick="openFeedModal()"><i class="fas fa-plus"></i> 新增 Feed</button>
+        <div class="adm-table-wrap">
+          <table class="adm-table">
+            <thead><tr><th>來源名稱</th><th>RSS URL</th><th style="width:70px">操作</th></tr></thead>
+            <tbody id="feedsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Podcast ── -->
+    <div class="tab-panel" id="panel-podcast">
+      <div class="sec-toolbar">
+        <button class="btn btn-primary" onclick="openPodcastModal()"><i class="fas fa-plus"></i> 新增 Podcast</button>
+        <span class="sec-count" id="podcastCount"></span>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr><th>名稱</th><th>RSS URL</th><th style="width:70px">操作</th></tr></thead>
+          <tbody id="podcastBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TAB: 英文學習 ── -->
+    <div class="tab-panel" id="panel-vocab">
+      <div class="sec-toolbar">
+        <button class="btn btn-primary" onclick="openVocabModal()"><i class="fas fa-plus"></i> 新增單字</button>
+        <input class="search-box" id="vocabSearch" placeholder="搜尋單字 / 定義…" oninput="renderVocab()">
+        <span class="sec-count" id="vocabCount"></span>
+        <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="resetVocab()">
+          <i class="fas fa-rotate-left"></i> 重設為預設 50 字
+        </button>
+      </div>
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead><tr>
+            <th>#</th><th>單字</th><th>音標</th><th>詞性</th><th>定義</th><th>例句</th><th style="width:90px">操作</th>
+          </tr></thead>
+          <tbody id="vocabBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /#admin-app -->
+
+<!-- ═══ SHARED EDIT MODAL ═══ -->
+<div class="backdrop" id="editModal">
+  <div class="modal modal-wide">
+    <div class="modal-hd">
+      <h3 id="modalTitle">編輯</h3>
+      <button class="ibtn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-bd" id="modalBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="modalSave()"><i class="fas fa-check"></i> 儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PASSPHRASE MODAL ═══ -->
+<div id="ppBackdrop">
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+    <div style="padding:28px 28px 0;text-align:center;">
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;color:#58a6ff;"><i class="fas fa-lock"></i></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px;">後台管理 — 解鎖</div>
+      <div style="font-size:12px;color:#8b949e;line-height:1.6;">資料已加密，請輸入密碼短語以讀取 Appwrite 資料</div>
+    </div>
+    <div style="padding:24px 28px 28px;display:flex;flex-direction:column;gap:12px;">
+      <input id="ppInput" type="password" placeholder="輸入密碼短語…"
+        style="width:100%;padding:10px 14px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font:inherit;font-size:14px;letter-spacing:2px;outline:none;"
+        onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"
+        onkeydown="if(event.key==='Enter')attemptUnlock()" />
+      <div id="ppErr" style="font-size:12px;color:#f85149;min-height:16px;text-align:center;"></div>
+      <button onclick="attemptUnlock()"
+        style="width:100%;padding:10px;background:#58a6ff;border:none;border-radius:8px;color:#0d1117;font:inherit;font-size:14px;font-weight:700;cursor:pointer;">
+        <i class="fas fa-unlock"></i> 解鎖
+      </button>
+      <button onclick="skipUnlock()"
+        style="width:100%;padding:8px;background:none;border:1px solid #30363d;border-radius:8px;color:#8b949e;font:inherit;font-size:13px;cursor:pointer;">
+        略過（僅使用 localStorage）
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Script dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/appwrite@16/dist/iife/sdk.js"></script>
+<script src="crypto.js"></script>
+<script src="config.js"></script>
+<script src="vocab.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
