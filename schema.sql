@@ -1,44 +1,181 @@
--- ═══════════════════════════════════════════════════════════
---  此檔案已改用 Appwrite（非 SQL 資料庫）
---  請依下方說明在 Appwrite Console 手動建立 Collection
+-- ═══════════════════════════════════════════════════════════════════
+--  Allen's Dashboard — Appwrite 1.9.0 資料庫結構說明
 --
---  Console 位址：https://cloud.appwrite.io
--- ═══════════════════════════════════════════════════════════
+--  此檔案為 Appwrite Console / CLI 建立資料庫的參考文件。
+--  Appwrite 使用 NoSQL 文件型資料庫，非傳統 SQL。
+--  Console：https://cloud.appwrite.io
+-- ═══════════════════════════════════════════════════════════════════
 
--- ┌─────────────────────────────────────────────────────────┐
--- │  Collection 1：dashboard_config                         │
--- ├─────────────────────────────────────────────────────────┤
--- │  Attribute  │ Type    │ Size   │ Required │ Default     │
--- │  key        │ String  │ 100    │ ✓        │ -           │
--- │  value      │ String  │ 65535  │ ✓        │ -           │
--- ├─────────────────────────────────────────────────────────┤
--- │  Index：key (unique)                                    │
--- │  Permissions：any → create / read / update / delete    │
--- └─────────────────────────────────────────────────────────┘
+-- ┌───────────────────────────────────────────────────────────────┐
+-- │  STEP 1 — 建立 Database                                       │
+-- │  Console → Databases → Create database                       │
+-- │  Database ID：allen-dashboard（自訂即可）                      │
+-- └───────────────────────────────────────────────────────────────┘
 
--- ┌─────────────────────────────────────────────────────────┐
--- │  Collection 2：calendar_events                          │
--- ├─────────────────────────────────────────────────────────┤
--- │  Attribute  │ Type    │ Size   │ Required │             │
--- │  title      │ String  │ 500    │ ✓        │             │
--- │  date       │ String  │ 10     │ ✓        │ YYYY-MM-DD  │
--- │  time       │ String  │ 10     │          │             │
--- │  note       │ String  │ 2000   │          │             │
--- │  color      │ String  │ 20     │          │ #58a6ff     │
--- ├─────────────────────────────────────────────────────────┤
--- │  Permissions：any → create / read / update / delete    │
--- └─────────────────────────────────────────────────────────┘
 
--- ┌─────────────────────────────────────────────────────────┐
--- │  Collection 3：personal_history                         │
--- ├─────────────────────────────────────────────────────────┤
--- │  Attribute   │ Type     │ Required │                    │
--- │  title       │ String   │ ✓        │                    │
--- │  description │ String   │          │                    │
--- │  year        │ Integer  │ ✓        │                    │
--- │  month       │ Integer  │ ✓        │ 1-12              │
--- │  day         │ Integer  │ ✓        │ 1-31              │
--- ├─────────────────────────────────────────────────────────┤
--- │  Index：month + day (key)                               │
--- │  Permissions：any → create / read / update / delete    │
--- └─────────────────────────────────────────────────────────┘
+-- ╔═══════════════════════════════════════════════════════════════╗
+-- ║  Table 1：dashboard_config                                    ║
+-- ║  用途：儲存設定值（關鍵字、連結、Podcast 等 JSON 字串）       ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Console → Databases → allen-dashboard → Create table        ║
+-- ║  Table ID：dashboard_config                                   ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Columns（點 Create row 新增每個欄位）                        ║
+-- ╠════════════╦═════════════╦═════════╦═══════════╦═════════════╣
+-- ║  Column ID ║  Type       ║ Sub-type║  Size     ║  Required   ║
+-- ╠════════════╬═════════════╬═════════╬═══════════╬═════════════╣
+-- ║  key       ║  Text       ║ varchar ║  100      ║  ✓          ║
+-- ║  value     ║  Text       ║ text    ║  -        ║  ✓          ║
+-- ╠════════════╩═════════════╩═════════╩═══════════╩═════════════╣
+-- ║  Index：Console → Indexes → Create index                     ║
+-- ║    Index Key：key_unique  │  Type：Unique  │  Attribute：key  ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Permissions（Settings → Permissions）                       ║
+-- ║    Role：Any  →  勾選 Create / Read / Update / Delete        ║
+-- ╚═══════════════════════════════════════════════════════════════╝
+
+
+-- ╔═══════════════════════════════════════════════════════════════╗
+-- ║  Table 2：calendar_events                                     ║
+-- ║  用途：行事曆事件                                             ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Console → Databases → allen-dashboard → Create table        ║
+-- ║  Table ID：calendar_events                                    ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Columns                                                      ║
+-- ╠════════════╦══════════╦═════════╦═══════════╦════════════════╣
+-- ║  Column ID ║  Type    ║ Sub-type║  Size     ║  Required      ║
+-- ╠════════════╬══════════╬═════════╬═══════════╬════════════════╣
+-- ║  title     ║  Text    ║ varchar ║  500      ║  ✓             ║
+-- ║  date      ║  Text    ║ varchar ║  10       ║  ✓  YYYY-MM-DD ║
+-- ║  time      ║  Text    ║ varchar ║  10       ║               ║
+-- ║  note      ║  Text    ║ text    ║  -        ║               ║
+-- ║  color     ║  Text    ║ varchar ║  20       ║               ║
+-- ╠════════════╩══════════╩═════════╩═══════════╩════════════════╣
+-- ║  Permissions：Role Any → Create / Read / Update / Delete     ║
+-- ╚═══════════════════════════════════════════════════════════════╝
+
+
+-- ╔═══════════════════════════════════════════════════════════════╗
+-- ║  Table 3：personal_history                                    ║
+-- ║  用途：個人記事（依當日月份 / 日期顯示）                      ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Console → Databases → allen-dashboard → Create table        ║
+-- ║  Table ID：personal_history                                   ║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Columns                                                      ║
+-- ╠═════════════╦══════════╦═════════╦══════════╦════════════════╣
+-- ║  Column ID  ║  Type    ║ Sub-type║  Size    ║  Required      ║
+-- ╠═════════════╬══════════╬═════════╬══════════╬════════════════╣
+-- ║  title      ║  Text    ║ varchar ║  500     ║  ✓             ║
+-- ║  description║  Text    ║ text    ║  -       ║               ║
+-- ║  year       ║  Integer ║  -      ║  -       ║  ✓  1900–2099 ║
+-- ║  month      ║  Integer ║  -      ║  -       ║  ✓  1–12      ║
+-- ║  day        ║  Integer ║  -      ║  -       ║  ✓  1–31      ║
+-- ╠═════════════╩══════════╩═════════╩══════════╩════════════════╣
+-- ║  Index：Console → Indexes → Create index                     ║
+-- ║    Index Key：month_day  │  Type：Key  │  Attributes：month,day║
+-- ╠═══════════════════════════════════════════════════════════════╣
+-- ║  Permissions：Role Any → Create / Read / Update / Delete     ║
+-- ╚═══════════════════════════════════════════════════════════════╝
+
+
+-- ═══════════════════════════════════════════════════════════════════
+--  Appwrite CLI 1.9.0 快速建立（可選）
+--  安裝：npm install -g appwrite-cli@latest
+-- ═══════════════════════════════════════════════════════════════════
+
+-- appwrite login
+-- appwrite init project
+-- appwrite databases create --database-id "allen-dashboard" --name "Allen Dashboard"
+
+-- # Table 1 — dashboard_config
+-- appwrite databases createCollection \
+--   --database-id "allen-dashboard" \
+--   --collection-id "dashboard_config" \
+--   --name "dashboard_config" \
+--   --permissions 'create("any")' 'read("any")' 'update("any")' 'delete("any")'
+
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "dashboard_config" \
+--   --key "key" --size 100 --required true
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "dashboard_config" \
+--   --key "value" --size 65535 --required true
+-- appwrite databases createIndex \
+--   --database-id "allen-dashboard" --collection-id "dashboard_config" \
+--   --key "key_unique" --type unique --attributes '["key"]'
+
+-- # Table 2 — calendar_events
+-- appwrite databases createCollection \
+--   --database-id "allen-dashboard" \
+--   --collection-id "calendar_events" \
+--   --name "calendar_events" \
+--   --permissions 'create("any")' 'read("any")' 'update("any")' 'delete("any")'
+
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "calendar_events" \
+--   --key "title" --size 500 --required true
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "calendar_events" \
+--   --key "date" --size 10 --required true
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "calendar_events" \
+--   --key "time" --size 10 --required false
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "calendar_events" \
+--   --key "note" --size 65535 --required false
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "calendar_events" \
+--   --key "color" --size 20 --required false --default "#58a6ff"
+
+-- # Table 3 — personal_history
+-- appwrite databases createCollection \
+--   --database-id "allen-dashboard" \
+--   --collection-id "personal_history" \
+--   --name "personal_history" \
+--   --permissions 'create("any")' 'read("any")' 'update("any")' 'delete("any")'
+
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "personal_history" \
+--   --key "title" --size 500 --required true
+-- appwrite databases createStringAttribute \
+--   --database-id "allen-dashboard" --collection-id "personal_history" \
+--   --key "description" --size 65535 --required false
+-- appwrite databases createIntegerAttribute \
+--   --database-id "allen-dashboard" --collection-id "personal_history" \
+--   --key "year" --required true --min 1900 --max 2099
+-- appwrite databases createIntegerAttribute \
+--   --database-id "allen-dashboard" --collection-id "personal_history" \
+--   --key "month" --required true --min 1 --max 12
+-- appwrite databases createIntegerAttribute \
+--   --database-id "allen-dashboard" --collection-id "personal_history" \
+--   --key "day" --required true --min 1 --max 31
+-- appwrite databases createIndex \
+--   --database-id "allen-dashboard" --collection-id "personal_history" \
+--   --key "month_day" --type key --attributes '["month","day"]'
+
+
+-- ═══════════════════════════════════════════════════════════════════
+--  Appwrite 1.9.0 欄位型別對照表
+-- ═══════════════════════════════════════════════════════════════════
+--
+--  Console 顯示名稱    Sub-type        用途
+--  ─────────────────────────────────────────────────────────────────
+--  Text                varchar         短字串（≤ 65,535 bytes）
+--  Text                text            中長文字
+--  Text                mediumtext      長文字（≤ 16 MB）
+--  Text                longtext        超長文字（≤ 4 GB）
+--  Integer             -               整數（64-bit）
+--  Float               -               浮點數
+--  Boolean             -               true / false
+--  DateTime            -               ISO 8601 時間戳
+--  Email               -               電子郵件格式驗證
+--  URL                 -               URL 格式驗證
+--  Enum                -               固定選項清單
+--  IP                  -               IP 位址格式驗證
+--  Relationship        -               跨 Table 關聯
+--
+-- ═══════════════════════════════════════════════════════════════════
+--  版本：Appwrite 1.9.0  ｜  更新：2026-04-29
+-- ═══════════════════════════════════════════════════════════════════
