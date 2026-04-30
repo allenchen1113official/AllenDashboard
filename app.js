@@ -52,6 +52,7 @@ let S = {
   wordNotes:       {},
   editEvtId:       null,
   personalHistory: [],
+  gcalEvents:      [],
 };
 
 // ─────────────────────────────────────────────
@@ -474,6 +475,7 @@ function renderCalendar() {
   const daysInMon = new Date(yr, mo + 1, 0).getDate();
   const todayStr  = fmtDateKey(new Date());
   const grid      = el('calDays');
+  const allEvts   = [...S.events, ...S.gcalEvents];
   grid.innerHTML  = '';
   for (let i = 0; i < firstDow; i++) {
     const d = document.createElement('div'); d.className = 'cal-day empty'; grid.appendChild(d);
@@ -481,7 +483,7 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMon; day++) {
     const dateStr = fmtDateKey(new Date(yr, mo, day));
     const isToday = dateStr === todayStr;
-    const evts    = S.events.filter(e => e.date === dateStr);
+    const evts    = allEvts.filter(e => e.date === dateStr);
     const d       = document.createElement('div');
     d.className   = 'cal-day' + (isToday ? ' today' : '');
     d.innerHTML   = `<span class="day-num">${day}</span>` +
@@ -494,10 +496,11 @@ function renderCalendar() {
 
 function renderUpcoming() {
   const todayMs = new Date().setHours(0, 0, 0, 0);
-  const soon = S.events
+  const allEvts = [...S.events, ...S.gcalEvents];
+  const soon = allEvts
     .filter(e => new Date(e.date).getTime() >= todayMs)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 6);
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
+    .slice(0, 8);
   const list = el('upcomingList');
   if (!soon.length) { list.innerHTML = '<span class="empty">無近期事件</span>'; return; }
   list.innerHTML = soon.map(ev => `
@@ -507,9 +510,9 @@ function renderUpcoming() {
         <div class="event-title-txt">${esc(ev.title)}</div>
         <div class="event-date-txt">${fmtEvtDate(ev.date, ev.time)}</div>
       </div>
-      <button class="ibtn danger" onclick="deleteEvt('${ev.id}')" title="刪除">
-        <i class="fas fa-trash"></i>
-      </button>
+      ${ev.source === 'google'
+        ? '<span title="Google Calendar" style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(66,133,244,.12);color:#4285F4;border:1px solid rgba(66,133,244,.25);flex-shrink:0"><i class="fab fa-google"></i></span>'
+        : `<button class="ibtn danger" onclick="deleteEvt('${ev.id}')" title="刪除"><i class="fas fa-trash"></i></button>`}
     </div>`).join('');
 }
 
@@ -1119,7 +1122,25 @@ function renderQuote() {
 }
 
 // ─────────────────────────────────────────────
-// 20. INIT
+// 20. GOOGLE CALENDAR SYNC
+// ─────────────────────────────────────────────
+async function loadGCalEvents() {
+  if (typeof GCAL === 'undefined' || !GCAL.isConnected()) return;
+  try {
+    S.gcalEvents = await GCAL.syncEvents();
+    renderCalendar();
+    renderUpcoming();
+  } catch (e) {
+    if (e.message === 'TOKEN_EXPIRED') {
+      S.gcalEvents = [];
+    } else {
+      console.error('loadGCalEvents:', e);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// 21. INIT
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Encrypted config: show passphrase modal before anything else
@@ -1151,6 +1172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initWeather();
   });
   initCalendar();
+  loadGCalEvents();
   initEnglish();
   initLinks();
   initNews();

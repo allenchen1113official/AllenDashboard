@@ -239,6 +239,7 @@
     <button class="tab-btn" data-tab="news"><i class="fas fa-newspaper"></i> 新聞訂閱</button>
     <button class="tab-btn" data-tab="podcast"><i class="fas fa-headphones"></i> Podcast</button>
     <button class="tab-btn" data-tab="vocab"><i class="fas fa-graduation-cap"></i> 英文學習</button>
+    <button class="tab-btn" data-tab="gcal"><i class="fab fa-google"></i> Google 日曆</button>
   </nav>
 
   <main class="adm-main">
@@ -337,6 +338,14 @@
       </div>
     </div>
 
+    <!-- ── TAB: Google 日曆 ── -->
+    <div class="tab-panel" id="panel-gcal">
+      <div class="subsection" id="gcalPanel">
+        <!-- Rendered by renderGCal() -->
+        <div class="empty-state"><i class="fas fa-spinner fa-spin"></i> 載入中…</div>
+      </div>
+    </div>
+
   </main>
 </div><!-- /#admin-app -->
 
@@ -385,9 +394,11 @@
 
 <!-- Script dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/appwrite@16/dist/iife/sdk.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="crypto.js"></script>
 <script src="config.js"></script>
 <script src="vocab.js"></script>
+<script src="gcal.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

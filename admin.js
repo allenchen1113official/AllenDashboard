@@ -568,6 +568,186 @@ function resetVocab() {
 }
 
 // ─────────────────────────────────────────────
+// 7. GOOGLE CALENDAR
+// ─────────────────────────────────────────────
+function renderGCal() {
+  const panel = el('gcalPanel');
+  if (!panel) return;
+  const hasLib    = typeof GCAL !== 'undefined';
+  const configured = hasLib && GCAL.isConfigured();
+  const connected  = hasLib && GCAL.isConnected();
+  const clientId   = hasLib ? GCAL.getClientId()   : '';
+  const daysBack   = hasLib ? GCAL.getDaysBack()    : 30;
+  const daysAhead  = hasLib ? GCAL.getDaysAhead()   : 90;
+
+  let html = `
+    <div class="subsec-title"><i class="fab fa-google" style="color:#4285F4"></i> Google Calendar 整合設定</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.8;background:var(--elev);padding:12px 16px;border-radius:8px;border:1px solid var(--border);">
+      <strong style="color:var(--text)">設定步驟：</strong><br>
+      1. 前往 <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--blue)">Google Cloud Console → 憑證</a><br>
+      2. 建立 OAuth 2.0 用戶端 ID（類型：網頁應用程式）<br>
+      3. 已授權的 JavaScript 來源：加入你的網域（如 <code style="color:var(--text)">https://你的帳號.github.io</code>）<br>
+      4. 啟用 Google Calendar API（APIs &amp; Services → 程式庫）<br>
+      5. 將 Client ID 貼入下方並儲存
+    </div>
+    <div>
+      <label class="flabel">OAuth 2.0 Client ID</label>
+      <div class="row-input">
+        <input class="finput" id="gcalClientId" value="${esc(clientId)}"
+          placeholder="xxxxxxxx.apps.googleusercontent.com"
+          style="font-size:12px;font-family:monospace" />
+        <button class="btn btn-ghost btn-sm" onclick="saveGCalClientId()">
+          <i class="fas fa-save"></i> 儲存
+        </button>
+      </div>
+    </div>`;
+
+  if (configured) {
+    html += `<div class="divider"></div>
+    <div class="subsec-title"><i class="fas fa-link"></i> 帳號連結狀態</div>`;
+
+    if (connected) {
+      html += `
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;
+            background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.25);border-radius:8px;">
+          <i class="fas fa-circle-check" style="color:var(--green)"></i>
+          <span style="font-size:13px;color:var(--green);font-weight:600">已連結 Google 帳號</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="syncGCalNow()">
+          <i class="fas fa-sync-alt"></i> 立即同步
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="disconnectGCal()">
+          <i class="fas fa-unlink"></i> 中斷連結
+        </button>
+      </div>
+      <div class="divider"></div>
+      <div class="subsec-title"><i class="fas fa-calendar-check"></i> 選擇要同步的日曆</div>
+      <div id="gcalCalList" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:var(--muted);font-size:12px"><i class="fas fa-spinner fa-spin"></i> 載入日曆清單…</div>
+      </div>
+      <div class="divider"></div>
+      <div class="subsec-title"><i class="fas fa-clock"></i> 同步時間範圍</div>
+      <div class="row-input" style="gap:20px;align-items:flex-end">
+        <div>
+          <label class="flabel">過去天數（0–365）</label>
+          <input class="finput" id="gcalDaysBack" type="number" min="0" max="365"
+            value="${daysBack}" style="width:110px" />
+        </div>
+        <div>
+          <label class="flabel">未來天數（1–365）</label>
+          <input class="finput" id="gcalDaysAhead" type="number" min="1" max="365"
+            value="${daysAhead}" style="width:110px" />
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveGCalRange()">
+          <i class="fas fa-check"></i> 儲存範圍
+        </button>
+      </div>`;
+    } else {
+      html += `
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;
+            background:var(--elev);border:1px solid var(--border);border-radius:8px;">
+          <i class="fas fa-circle-xmark" style="color:var(--muted)"></i>
+          <span style="font-size:13px;color:var(--muted)">尚未連結 Google 帳號</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="connectGCal()">
+          <i class="fab fa-google"></i> 連結 Google 帳號
+        </button>
+      </div>`;
+    }
+  }
+
+  panel.innerHTML = html;
+  if (configured && connected) loadGCalCalendars();
+}
+
+async function loadGCalCalendars() {
+  if (typeof GCAL === 'undefined') return;
+  const listEl = el('gcalCalList');
+  if (!listEl) return;
+  try {
+    const cals = await GCAL.listCalendars();
+    if (!cals.length) {
+      listEl.innerHTML = '<span style="color:var(--muted);font-size:12px">找不到任何日曆</span>';
+      return;
+    }
+    listEl.innerHTML = cals.map(c => `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;
+          padding:8px 12px;border-radius:8px;background:var(--elev);border:1px solid var(--border);">
+        <input type="checkbox" value="${esc(c.id)}" ${c.selected ? 'checked' : ''}
+          onchange="saveGCalCals()" style="width:15px;height:15px;accent-color:var(--blue)" />
+        <span style="width:12px;height:12px;border-radius:50%;background:${esc(c.color)};
+          flex-shrink:0;display:inline-block"></span>
+        <span style="font-size:13px;flex:1">${esc(c.name)}</span>
+        ${c.primary
+          ? '<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:var(--blue)">主要</span>'
+          : ''}
+      </label>`).join('');
+  } catch (e) {
+    listEl.innerHTML = `<span style="color:var(--red);font-size:12px">
+      <i class="fas fa-exclamation-triangle"></i> 無法載入日曆：${esc(e.message)}</span>`;
+    if (e.message === 'TOKEN_EXPIRED') renderGCal();
+  }
+}
+
+function saveGCalClientId() {
+  if (typeof GCAL === 'undefined') { showToast('gcal.js 未載入', 'err'); return; }
+  const id = (el('gcalClientId')?.value || '').trim();
+  if (!id) { showToast('請輸入 Client ID', 'err'); return; }
+  GCAL.setClientId(id);
+  renderGCal();
+  showToast('Client ID 已儲存');
+}
+
+async function connectGCal() {
+  if (typeof GCAL === 'undefined') { showToast('gcal.js 未載入', 'err'); return; }
+  try {
+    await GCAL.signIn();
+    renderGCal();
+    showToast('已連結 Google 帳號');
+  } catch (e) {
+    showToast('連結失敗：' + e.message, 'err');
+  }
+}
+
+function disconnectGCal() {
+  if (!confirm('確定要中斷與 Google 帳號的連結？')) return;
+  if (typeof GCAL !== 'undefined') GCAL.signOut();
+  renderGCal();
+  showToast('已中斷 Google 帳號連結');
+}
+
+function saveGCalCals() {
+  if (typeof GCAL === 'undefined') return;
+  const checks   = document.querySelectorAll('#gcalCalList input[type=checkbox]');
+  const selected = Array.from(checks).filter(c => c.checked).map(c => c.value);
+  GCAL.setSelectedCals(selected.length ? selected : ['primary']);
+  showToast('日曆選擇已儲存');
+}
+
+function saveGCalRange() {
+  if (typeof GCAL === 'undefined') return;
+  const back  = parseInt(el('gcalDaysBack')?.value  || '30',  10);
+  const ahead = parseInt(el('gcalDaysAhead')?.value || '90', 10);
+  GCAL.setDaysBack(isNaN(back)  ? 30  : Math.max(0,   back));
+  GCAL.setDaysAhead(isNaN(ahead) ? 90 : Math.max(1, ahead));
+  showToast('同步範圍已儲存');
+}
+
+async function syncGCalNow() {
+  if (typeof GCAL === 'undefined') return;
+  try {
+    showToast('同步中…');
+    const evts = await GCAL.syncEvents();
+    showToast(`已同步 ${evts.length} 個 Google 日曆事件`);
+  } catch (e) {
+    showToast('同步失敗：' + e.message, 'err');
+    if (e.message === 'TOKEN_EXPIRED') renderGCal();
+  }
+}
+
+// ─────────────────────────────────────────────
 // PASSPHRASE UNLOCK
 // ─────────────────────────────────────────────
 function showPPModal() {
@@ -619,6 +799,7 @@ function initUI() {
   renderFeeds();
   renderPodcasts();
   renderVocab();
+  renderGCal();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
