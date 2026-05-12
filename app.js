@@ -30,7 +30,7 @@ const DEFAULT_FEEDS = [
   { name:'Hacker News', url:'https://hnrss.org/frontpage' },
 ];
 const DEFAULT_PODCASTS = [
-  { name:'TED Talks Daily', url:'https://feeds.feedburner.com/TEDTalks_audio' },
+  { name:'TED Talks Daily', url:'https://feeds.simplecast.com/Q0usQZHN' },
   { name:'NPR News Now',    url:'https://feeds.npr.org/500005/podcast.xml' },
 ];
 const CACHE_TTL = 30 * 60 * 1000;
@@ -632,13 +632,56 @@ async function fetchRSS(url, source, force = false) {
     const c = lsGet(key);
     if (c && Date.now() - c.ts < CACHE_TTL) return c.data;
   }
-  const res  = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`);
-  const json = await res.json();
-  if (json.status !== 'ok') throw new Error('rss');
-  const data = json.items.map(i => ({
-    title: i.title || '', desc: stripHTML(i.description || i.content || ''),
-    link: i.link || '', pubDate: i.pubDate || '', thumb: i.thumbnail || '', source,
-  }));
+
+  let data = null;
+
+  // ── Attempt 1: rss2json (handles parsing, returns JSON) ──
+  try {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 8000);
+    const res  = await fetch(
+      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(tid);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.status === 'ok' && Array.isArray(json.items)) {
+        data = json.items.map(i => ({
+          title: i.title || '', desc: stripHTML(i.description || i.content || ''),
+          link: i.link || '', pubDate: i.pubDate || '', thumb: i.thumbnail || '', source,
+        }));
+      }
+    }
+  } catch (_) {}
+
+  // ── Attempt 2: allorigins CORS proxy + DOMParser ──────────
+  if (!data) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 10000);
+    const res  = await fetch(
+      `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(tid);
+    const json = await res.json();
+    const xml  = new DOMParser().parseFromString(json.contents || '', 'text/xml');
+    const items = [...xml.querySelectorAll('item, entry')];
+    if (!items.length) throw new Error('rss_empty');
+    data = items.slice(0, 20).map(item => {
+      const q = s => item.querySelector(s)?.textContent?.trim() || '';
+      return {
+        title:   q('title'),
+        desc:    stripHTML(q('description') || q('summary') || q('content')),
+        link:    item.querySelector('link')?.getAttribute('href') || q('link'),
+        pubDate: q('pubDate') || q('published') || q('updated'),
+        thumb:   item.querySelector('enclosure[type^="image"]')?.getAttribute('url') ||
+                 item.querySelector('thumbnail')?.getAttribute('url') || '',
+        source,
+      };
+    });
+  }
+
   lsSet(key, { data, ts: Date.now() });
   return data;
 }
