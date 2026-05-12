@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     :root {
-      --bg:     #0d1117; --card:   #161b22; --elev:  #21262d;
-      --border: #30363d; --text:   #e6edf3; --muted: #8b949e;
-      --blue:   #58a6ff; --green:  #3fb950; --red:   #f85149;
-      --purple: #bc8cff; --yellow: #d29922; --orange:#f0883e;
+      --bg:     #060c1a; --card:   #0b1528; --elev:  #102040;
+      --border: #1c3d6b; --text:   #cce3ff; --muted: #4a7ab5;
+      --blue:   #4dabf7; --green:  #3fb950; --red:   #f85149;
+      --purple: #c792ff; --yellow: #f0c040; --orange:#fd9a3c;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
@@ -82,8 +82,8 @@
       padding: 7px 16px; border-radius: 8px; font: inherit; font-size: 13px;
       font-weight: 600; cursor: pointer; border: none; transition: all .15s;
     }
-    .btn-primary { background: var(--blue); color: #0d1117; }
-    .btn-primary:hover { background: #79b8ff; }
+    .btn-primary { background: var(--blue); color: #060c1a; }
+    .btn-primary:hover { background: #74c0fc; }
     .btn-ghost { background: var(--elev); border: 1px solid var(--border); color: var(--muted); }
     .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
     .btn-danger { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: var(--red); }
@@ -124,7 +124,7 @@
     /* ── Category chip ── */
     .cat-chip {
       font-size: 11px; padding: 2px 8px; border-radius: 20px;
-      background: rgba(88,166,255,.1); border: 1px solid rgba(88,166,255,.2);
+      background: rgba(77,171,247,.1); border: 1px solid rgba(77,171,247,.2);
       color: var(--blue); font-weight: 500;
     }
 
@@ -210,12 +210,12 @@
     /* ── Vocab pos badge ── */
     .pos-badge {
       font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600;
-      background: rgba(188,140,255,.1); border: 1px solid rgba(188,140,255,.25); color: var(--purple);
+      background: rgba(199,146,255,.1); border: 1px solid rgba(199,146,255,.25); color: var(--purple);
     }
 
     /* ── Passphrase overlay ── */
     #ppBackdrop {
-      display: none; position: fixed; inset: 0; background: rgba(13,17,23,.96);
+      display: none; position: fixed; inset: 0; background: rgba(6,12,26,.96);
       backdrop-filter: blur(8px); z-index: 2000; align-items: center; justify-content: center; padding: 20px;
     }
   </style>
@@ -366,24 +366,24 @@
 
 <!-- ═══ PASSPHRASE MODAL ═══ -->
 <div id="ppBackdrop">
-  <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6);">
     <div style="padding:28px 28px 0;text-align:center;">
-      <div style="width:52px;height:52px;border-radius:50%;background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;color:#58a6ff;"><i class="fas fa-lock"></i></div>
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(77,171,247,.12);border:1px solid rgba(77,171,247,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;color:var(--blue);"><i class="fas fa-lock"></i></div>
       <div style="font-size:16px;font-weight:700;margin-bottom:6px;">後台管理 — 解鎖</div>
-      <div style="font-size:12px;color:#8b949e;line-height:1.6;">資料已加密，請輸入密碼短語以讀取 Appwrite 資料</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;">資料已加密，請輸入密碼短語以讀取 Appwrite 資料</div>
     </div>
     <div style="padding:24px 28px 28px;display:flex;flex-direction:column;gap:12px;">
       <input id="ppInput" type="password" placeholder="輸入密碼短語…"
-        style="width:100%;padding:10px 14px;background:#21262d;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font:inherit;font-size:14px;letter-spacing:2px;outline:none;"
-        onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"
+        style="width:100%;padding:10px 14px;background:var(--elev);border:1px solid var(--border);border-radius:8px;color:var(--text);font:inherit;font-size:14px;letter-spacing:2px;outline:none;"
+        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
         onkeydown="if(event.key==='Enter')attemptUnlock()" />
-      <div id="ppErr" style="font-size:12px;color:#f85149;min-height:16px;text-align:center;"></div>
+      <div id="ppErr" style="font-size:12px;color:var(--red);min-height:16px;text-align:center;"></div>
       <button onclick="attemptUnlock()"
-        style="width:100%;padding:10px;background:#58a6ff;border:none;border-radius:8px;color:#0d1117;font:inherit;font-size:14px;font-weight:700;cursor:pointer;">
+        style="width:100%;padding:10px;background:var(--blue);border:none;border-radius:8px;color:#060c1a;font:inherit;font-size:14px;font-weight:700;cursor:pointer;">
         <i class="fas fa-unlock"></i> 解鎖
       </button>
       <button onclick="skipUnlock()"
-        style="width:100%;padding:8px;background:none;border:1px solid #30363d;border-radius:8px;color:#8b949e;font:inherit;font-size:13px;cursor:pointer;">
+        style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;">
         略過（僅使用 localStorage）
       </button>
     </div>
