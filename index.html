@@ -370,21 +370,21 @@
 </div>
 
 <!-- ═══ PASSPHRASE UNLOCK (shown only when APPWRITE_CIPHER is set) ═══ -->
-<div id="passphraseBackdrop" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,.96);
+<div id="passphraseBackdrop" style="display:none;position:fixed;inset:0;background:rgba(6,12,26,.96);
   backdrop-filter:blur(8px);z-index:2000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
     box-shadow:0 8px 40px rgba(0,0,0,.6);width:100%;max-width:400px;overflow:hidden;">
 
     <div style="padding:28px 28px 0;text-align:center;">
-      <div style="width:56px;height:56px;border-radius:50%;background:rgba(88,166,255,.12);
-        border:1px solid rgba(88,166,255,.3);display:flex;align-items:center;justify-content:center;
-        margin:0 auto 16px;font-size:22px;color:#58a6ff;">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(77,171,247,.12);
+        border:1px solid rgba(77,171,247,.3);display:flex;align-items:center;justify-content:center;
+        margin:0 auto 16px;font-size:22px;color:var(--blue);">
         <i class="fas fa-lock"></i>
       </div>
-      <div style="font-size:17px;font-weight:700;color:#e6edf3;margin-bottom:6px;">
+      <div style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
         Allen's Dashboard
       </div>
-      <div style="font-size:12px;color:#8b949e;line-height:1.6;">
+      <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">
         資料已加密，請輸入密碼短語以解鎖
       </div>
     </div>
@@ -392,27 +392,27 @@
     <div style="padding:24px 28px 28px;display:flex;flex-direction:column;gap:14px;">
       <input id="passphraseInput" type="password"
         placeholder="輸入密碼短語…"
-        style="width:100%;padding:10px 14px;background:#21262d;border:1px solid #30363d;
-          border-radius:8px;color:#e6edf3;font:inherit;font-size:14px;letter-spacing:2px;
+        style="width:100%;padding:10px 14px;background:var(--bg-elevated);border:1px solid var(--border);
+          border-radius:8px;color:var(--text-primary);font:inherit;font-size:14px;letter-spacing:2px;
           transition:border-color .15s;outline:none;"
-        onfocus="this.style.borderColor='#58a6ff'"
-        onblur="this.style.borderColor='#30363d'" />
+        onfocus="this.style.borderColor='#4dabf7'"
+        onblur="this.style.borderColor='#1c3d6b'" />
 
       <div id="passphraseErr"
-        style="font-size:12px;color:#f85149;min-height:18px;text-align:center;"></div>
+        style="font-size:12px;color:var(--red);min-height:18px;text-align:center;"></div>
 
       <button id="passphraseUnlockBtn"
-        style="width:100%;padding:11px;background:#58a6ff;border:none;border-radius:8px;
-          color:#0d1117;font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+        style="width:100%;padding:11px;background:var(--blue);border:none;border-radius:8px;
+          color:#060c1a;font:inherit;font-size:14px;font-weight:700;cursor:pointer;
           display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;"
-        onmouseover="this.style.background='#79b8ff'"
-        onmouseout="this.style.background='#58a6ff'">
+        onmouseover="this.style.background='#74c0fc'"
+        onmouseout="this.style.background='#4dabf7'">
         <i class="fas fa-unlock"></i> 解鎖
       </button>
 
-      <div style="font-size:11px;color:#484f58;text-align:center;line-height:1.5;">
+      <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.5;">
         密碼短語不會被儲存。忘記時請重新執行 <code style="background:rgba(255,255,255,.06);
-        padding:1px 5px;border-radius:4px;color:#8b949e;">setup.html</code> 產生新設定。
+        padding:1px 5px;border-radius:4px;color:var(--text-secondary);">setup.html</code> 產生新設定。
       </div>
     </div>
   </div>
