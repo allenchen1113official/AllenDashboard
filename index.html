@@ -14,10 +14,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <!-- Appwrite Web SDK -->
   <script src="https://cdn.jsdelivr.net/npm/appwrite@16/dist/iife/sdk.js"></script>
-  <!-- AES-256-GCM crypto helpers (must load before config.js) -->
+  <!-- AES-256-GCM crypto helpers (must load before config) -->
   <script src="crypto.js"></script>
-  <!-- Appwrite credentials (plain or encrypted via setup.html) -->
-  <script src="config.js"></script>
+  <!-- Appwrite credentials injected from Vercel environment variables -->
+  <script src="/api/config"></script>
   <!-- Shared vocabulary data -->
   <script src="vocab.js"></script>
   <!-- Google Identity Services (Google Calendar OAuth) -->
@@ -51,7 +51,7 @@
   <!-- DB 未設定提示列 -->
   <div class="db-banner" id="dbBanner" style="display:none">
     <i class="fas fa-triangle-exclamation"></i>
-    <span>Appwrite 尚未設定，資料暫存於瀏覽器。請編輯 <code>config.js</code>，並在 Appwrite Console 依 <code>schema.sql</code> 說明建立 Collection。</span>
+    <span>Appwrite 尚未設定，資料暫存於瀏覽器。請在 Vercel 專案設定 → Environment Variables 填入 <code>APPWRITE_SALT</code> / <code>APPWRITE_CIPHER</code>，並在 Appwrite Console 依 <code>schema.sql</code> 建立 Collection。</span>
     <button class="db-banner-close" onclick="this.parentElement.style.display='none'">✕</button>
   </div>
 
