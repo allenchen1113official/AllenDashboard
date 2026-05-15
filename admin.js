@@ -76,7 +76,11 @@ async function initAdminAppwrite() {
     awDb = new Databases(client);
     await awDb.listDocuments(AW_DB_ID, AW_COL_CONFIG, []);
     return true;
-  } catch (_) { awDb = null; return false; }
+  } catch (e) {
+    console.error('[Appwrite Admin] 連線失敗:', e?.message || e);
+    awDb = null;
+    return false;
+  }
 }
 
 async function maybeEncrypt(text) {
@@ -586,7 +590,7 @@ function renderGCal() {
       <strong style="color:var(--text)">設定步驟：</strong><br>
       1. 前往 <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--blue)">Google Cloud Console → 憑證</a><br>
       2. 建立 OAuth 2.0 用戶端 ID（類型：網頁應用程式）<br>
-      3. 已授權的 JavaScript 來源：加入你的網域（如 <code style="color:var(--text)">https://你的帳號.github.io</code>）<br>
+      3. 已授權的 JavaScript 來源：加入你的網域（如 <code style="color:var(--text)">如 https://你的帳號.github.io</code>）<br>
       4. 啟用 Google Calendar API（APIs &amp; Services → 程式庫）<br>
       5. 將 Client ID 貼入下方並儲存
     </div>
@@ -784,7 +788,9 @@ async function connectAppwrite() {
     await loadFromAppwrite();
     setSyncStatus('Appwrite ✓', 'ok');
   } else {
-    setSyncStatus('localStorage', '');
+    setSyncStatus('連線失敗', 'err');
+    console.warn('[Appwrite] 若憑證正確仍無法連線，請至 Appwrite Console → Platforms 新增 Web 平台 allendashboard.vercel.app');
+    setTimeout(() => setSyncStatus('localStorage', ''), 4000);
   }
   initUI();
 }
