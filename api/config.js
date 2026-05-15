@@ -2,9 +2,9 @@
 // Injects Appwrite credentials from Vercel Environment Variables as JS globals.
 // Same variable names as config.js so app.js / admin.js need no changes.
 module.exports = (req, res) => {
-  const endpoint = process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
-  const salt     = process.env.APPWRITE_SALT     || '';
-  const cipher   = process.env.APPWRITE_CIPHER   || '';
+  const endpoint = (process.env.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1').trim();
+  const salt     = (process.env.APPWRITE_SALT     || '').trim();
+  const cipher   = (process.env.APPWRITE_CIPHER   || '').trim();
 
   let lines;
   if (salt && cipher) {
