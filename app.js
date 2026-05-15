@@ -104,20 +104,21 @@ async function initAppwriteConfig() {
 
 async function initAppwrite() {
   try {
-    if (typeof window.Appwrite === 'undefined') return false;
-    if (!await initAppwriteConfig()) return false;
+    if (typeof window.Appwrite === 'undefined') return 'no_sdk';
+    if (!await initAppwriteConfig()) return 'no_config';
     const { Client, Databases } = window.Appwrite;
     const client = new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(AW_PROJECT_ID);
     awDb = new Databases(client);
     await awDb.listDocuments(AW_DB_ID, AW_COL_CONFIG, []);
-    return true;
-  } catch (_) { awDb = null; return false; }
+    return 'ok';
+  } catch (e) {
+    console.error('[Appwrite] 連線失敗:', e?.message || e);
+    awDb = null;
+    return 'connect_error';
+  }
 }
 
 // ── Transparent encrypt / decrypt ────────────
-// maybeEncrypt/maybeDecrypt are no-ops when sessionKey is null (plain mode).
-// maybeDecrypt falls back to the raw value so legacy unencrypted records
-// continue to work after encryption is enabled.
 async function maybeEncrypt(text) {
   if (!sessionKey || text == null) return text ?? '';
   return AW_CRYPTO.encrypt(String(text), sessionKey);
@@ -128,7 +129,7 @@ async function maybeDecrypt(text) {
   catch (_) { return text; }
 }
 
-// ── Load ─────────────────────────────────────
+// ── Load ─────────────────────────────
 async function loadFromDB() {
   if (!awDb) return;
   try {
@@ -170,7 +171,7 @@ async function loadFromDB() {
   } catch (e) { console.error('loadFromDB:', e); }
 }
 
-// ── Sync helpers ─────────────────────────────
+// ── Sync helpers ─────────────────────────
 function syncConfig(key) {
   if (!awDb) { saveLocal(); return; }
   _syncConfigAsync(key).catch(e => { console.error('syncConfig', key, e); saveLocal(); });
@@ -241,7 +242,7 @@ async function _syncDocAsync(colId, docId, data) {
   }
 }
 
-// ── Status badge ─────────────────────────────
+// ── Status badge ─────────────────────────
 function setDBStatus(status) {
   const badge = document.getElementById('dbBadge');
   const label = document.getElementById('dbLabel');
@@ -253,9 +254,16 @@ function setDBStatus(status) {
               : status === 'pending'   ? '正在連接資料庫…'
               : '尚未設定 Appwrite（資料暫存於瀏覽器）';
 }
-function showDBBanner() {
+function showDBBanner(reason) {
   const b = document.getElementById('dbBanner');
-  if (b) b.style.display = 'flex';
+  if (!b) return;
+  if (reason === 'connect_error') {
+    const span = b.querySelector('span');
+    if (span) span.innerHTML = 'Appwrite 連線失敗（憑證已解密，但 API 請求被拒）。'
+      + '請至 <strong>Appwrite Console → 專案設定 → Platforms</strong>，新增 Web 平台：'
+      + '<code>allendashboard.vercel.app</code>，再重新整理頁面。詳細錯誤請查看瀏覽器 Console。';
+  }
+  b.style.display = 'flex';
 }
 
 // ─────────────────────────────────────────────
@@ -280,13 +288,11 @@ function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val));
 // ─────────────────────────────────────────────
 function initClock() { tick(); setInterval(tick, 1000); }
 
-// Apply owner name to page title and header h1
 function applyOwnerName() {
   const name = S.ownerName || 'Allen';
   document.title = `${name}'s Dashboard`;
   const h1 = document.querySelector('.header-brand h1');
   if (h1) h1.textContent = `${name}'s Dashboard`;
-  // Sync settings input if modal is open
   const inp = el('settingsOwnerName');
   if (inp && document.activeElement !== inp) inp.value = name;
 }
@@ -302,14 +308,13 @@ function tick() {
   document.getElementById('greeting').textContent =
     h < 6  ? `🌙 ${name}，夜深了注意休息` :
     h < 12 ? `☀️ 早安，${name}！今天也加油` :
-    h < 18 ? `🌤 午安，${name}！保持專注` : `🌆 晚安，${name}，辛苦了`;
+    h < 18 ? `🌤 午安，${name}！保持專注` : `🏙 晚安，${name}，辛苦了`;
 }
 
 // ─────────────────────────────────────────────
 // 7. ENGLISH LEARNING
 // ─────────────────────────────────────────────
 
-// ── TTS (Web Speech API) ─────────────────────
 const TTS = (() => {
   if (!('speechSynthesis' in window)) return null;
   let voice = null;
@@ -331,12 +336,9 @@ const TTS = (() => {
     utt.rate   = rate;
     utt.pitch  = 1;
     if (voice) utt.voice = voice;
-
-    // Visual feedback: icon spins while speaking
     const btn = el('speakWord');
     const ico = btn?.querySelector('i');
     if (ico) { ico.classList.add('fa-spin'); utt.onend = () => ico.classList.remove('fa-spin'); }
-
     window.speechSynthesis.speak(utt);
   }
 
@@ -368,7 +370,6 @@ function updateAutoSpeakBtn() {
     btn.style.color = '';
     btn.title = '自動朗讀：關閉（點擊開啟）';
   }
-  // Hide TTS buttons when not supported
   if (!TTS) {
     ['speakWord','autoSpeakToggle','speakDef'].forEach(id => {
       const b = el(id); if (b) b.style.display = 'none';
@@ -385,7 +386,6 @@ function initEnglish() {
   el('nextWord').addEventListener('click', () => stepWord(+1));
   el('flipCard').addEventListener('click', toggleFlip);
   el('flashcard').addEventListener('click', e => {
-    // Prevent flip when clicking speak button inside fc-back
     if (e.target.closest('#speakDef')) return;
     toggleFlip();
   });
@@ -635,7 +635,6 @@ async function fetchRSS(url, source, force = false) {
 
   let data = null;
 
-  // ── Attempt 1: rss2json (handles parsing, returns JSON) ──
   try {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 8000);
@@ -655,7 +654,6 @@ async function fetchRSS(url, source, force = false) {
     }
   } catch (_) {}
 
-  // ── Attempt 2: allorigins CORS proxy + DOMParser ──────────
   if (!data) {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 10000);
@@ -688,7 +686,7 @@ async function fetchRSS(url, source, force = false) {
 
 function renderNews(articles) {
   const body = el('newsBody');
-  if (!articles.length) { body.innerHTML = '<div class="empty">無符合關鍵字的新聞，請調整設定</div>'; return; }
+  if (!articles.length) { body.innerHTML = '<div class="empty">無符合關鍵字的新跡，請調整設定</div>'; return; }
   body.innerHTML = articles.slice(0, 30).map(a => `
     <div class="news-item">
       ${a.thumb ? `<img src="${esc(a.thumb)}" class="news-thumb" loading="lazy" onerror="this.style.display='none'">` : ''}
@@ -795,7 +793,6 @@ async function fetchWorldHistory(force = false) {
     const c = lsGet(ckey);
     if (c && Date.now() - c.ts < 24 * 3600 * 1000) { renderWorldHistory(c.data); return; }
   }
-  // Try zh then en Wikipedia
   for (const lang of ['zh', 'en']) {
     try {
       const res  = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/feed/onthisday/events/${mm}/${dd}`);
@@ -827,7 +824,7 @@ function renderWorldHistory(events) {
 }
 
 // ─────────────────────────────────────────────
-// 13. PERSONAL HISTORY  (艾倫歷史上的今天)
+// 13. PERSONAL HISTORY
 // ─────────────────────────────────────────────
 function initPersonalHistory() {
   const now   = new Date();
@@ -961,7 +958,6 @@ function requestPassphrase() {
       if (btn) btn.disabled = true;
       try {
         const key = await AW_CRYPTO.deriveKey(pass, APPWRITE_SALT);
-        // Verify passphrase by attempting to decrypt the config cipher
         await AW_CRYPTO.decrypt(APPWRITE_CIPHER, key);
         if (backdrop) backdrop.style.display = 'none';
         resolve(key);
@@ -1037,7 +1033,6 @@ async function initWeather() {
 async function fetchWeather(lat, lon) {
   const body = el('weatherBody');
   try {
-    // Reverse-geocode city name
     const geoRes  = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh-TW`,
       { headers: { 'Accept-Language': 'zh-TW,zh;q=0.9' } }
@@ -1053,7 +1048,6 @@ async function fetchWeather(lat, lon) {
     const cityEl = el('weatherCity');
     if (cityEl) cityEl.textContent = city + ' 一週天氣';
 
-    // Fetch 7-day forecast
     const wRes  = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
       `&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
@@ -1095,34 +1089,34 @@ async function fetchWeather(lat, lon) {
 // ─────────────────────────────────────────────
 const QUOTES = [
   { text: '成功是努力、勇氣，以及失敗後一次次重新站起來的結果。', author: '溫斯頓·邱吉爾' },
-  { text: '你的時間有限，所以不要浪費時間活在別人的生命裡。', author: '賈伯斯' },
+  { text: '你的時間有限，所以不要浪費時間活在別人的生命裡。', author: '賃伯斯' },
   { text: '不要等到完美，開始行動，邊做邊調整。', author: '里德·霍夫曼' },
-  { text: '學而不思則罔，思而不學則殆。', author: '孔子' },
+  { text: '學而不思則罔，思而不學則澆。', author: '孔子' },
   { text: '天下難事，必作於易；天下大事，必作於細。', author: '老子' },
-  { text: '路漫漫其修遠兮，吾將上下而求索。', author: '屈原' },
-  { text: '每一個不曾起舞的日子，都是對生命的辜負。', author: '尼采' },
+  { text: '路漫漫其修遠兩，吾將上下而求索。', author: '屈原' },
+  { text: '每一個不曾起舞的日子，都是對生命的辜負。', author: '尼根' },
   { text: '生命不在於活得長久，而在於活得充實。', author: '梭羅' },
   { text: '你必須成為你希望在這個世界上看到的改變。', author: '甘地' },
   { text: '人可以被摧毀，但不能被打敗。', author: '海明威' },
   { text: '在你放棄之前，想想你為什麼堅持到現在。', author: '佚名' },
-  { text: '夢想是翅膀，行動是起飛的跑道。', author: '佚名' },
+  { text: '夢想是翅潑，行動是起飛的跑道。', author: '佚名' },
   { text: '勇氣並不是沒有恐懼，而是判斷其他事物比恐懼更重要。', author: '安柏羅斯·雷德蒙' },
-  { text: '機會不是等來的，而是創造出來的。', author: '克里斯·格羅塞克' },
+  { text: '機會不是等來的，而是創造出來的。', author: '克里斯·格羅塑克' },
   { text: '堅持做你認為正確的事，即使沒有人看見。', author: '佚名' },
-  { text: '知識是唯一在分享時會增長的資源。', author: '路易斯·艾倫' },
+  { text: '知識是唯一在分享時會增長的資源。', author: '路易斯·觾倫' },
   { text: '一個人能走多遠，取決於他的夢想有多大。', author: '佚名' },
   { text: '細節決定成敗，態度決定一切。', author: '汪中求' },
-  { text: '昨日種種，皆成今我。', author: '佚名' },
+  { text: '昨日種種，皱成今我。', author: '佚名' },
   { text: '你不需要看到全部的階梯，只需要踏出第一步。', author: '馬丁·路德·金恩' },
   { text: '卓越不是行為，而是習慣。', author: '亞里斯多德' },
   { text: '成大事者，不拘小節，但不忽視細節。', author: '佚名' },
   { text: '讀萬卷書，行萬里路。', author: '劉彝' },
-  { text: '只有走出舒適圈，才能真正成長。', author: '佚名' },
+  { text: '只有走出舡適圈，才能真正成長。', author: '佚名' },
   { text: '智慧不是知識的積累，而是對事物本質的洞察。', author: '蘇格拉底' },
   { text: '設定目標是看不見未來的第一步。', author: '托尼·羅賓斯' },
   { text: '把每一天都當作學習的機會，你將永不停止成長。', author: '佚名' },
   { text: '最好的投資，是投資自己。', author: '沃倫·巴菲特' },
-  { text: '生命中最重要的事，不是你在哪裡，而是你往哪裡走。', author: '奧利佛·溫德爾·霍姆斯' },
+  { text: '生命中最重要的事，不是你在哪裡，而是你往哪裡走。', author: '奥利佛·温德爾·霍姆斯' },
   { text: '與其等待完美時機，不如把握現在並讓它成為完美。', author: '佚名' },
 ];
 
@@ -1131,7 +1125,6 @@ let quoteIdx = null;
 function initQuote() {
   const body = el('quoteBody');
   if (!body) return;
-  // Seed with day-of-year so same quote shows all day, rotates daily
   const now = new Date();
   const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   quoteIdx = doy % QUOTES.length;
@@ -1175,7 +1168,6 @@ async function loadGCalEvents() {
 // 21. INIT
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Encrypted config: show passphrase modal before anything else
   if (typeof APPWRITE_CIPHER !== 'undefined' &&
       typeof APPWRITE_SALT   !== 'undefined' &&
       typeof AW_CRYPTO       !== 'undefined') {
@@ -1184,13 +1176,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setDBStatus('pending');
   const ready = await initAppwrite();
-  if (ready) {
+  if (ready === 'ok') {
     await loadFromDB();
     setDBStatus('connected');
   } else {
     loadLocal();
     setDBStatus('disconnected');
-    showDBBanner();
+    showDBBanner(ready);
   }
   applyOwnerName();
   initClock();
